@@ -82,8 +82,28 @@ function redsys_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
 function redsys_civicrm_managed(&$entities) {
-  return _redsys_civix_civicrm_managed($entities);
+  $entities[] = array(
+    'module' => 'com.ixiam.payment.redsys',
+    'name' => 'Redsys Payment Processor',
+    'entity' => 'PaymentProcessorType',
+    'params' => array(
+      'version' => 3,
+      'name' => 'Redsys',
+      'title' => 'Redsys Payment Processor',
+      'description' => 'Works with Servired (Sermepa) and 4B (Pasat).',
+      'class_name' => 'Payment_Redsys',
+      'billing_mode' => 'notify',
+      'user_name_label' => 'Número de comercio',
+      'password_label' => 'Clave secreta de encriptación',
+      'url_site_default'=> 'https://sis.redsys.es/sis/realizarPago',
+      'url_site_test_default' => 'https://sis-t.redsys.es:25443/sis/realizarPago',
+      'is_recur' => 0,
+      'payment_type' => 1
+    ),
+  );
 }
+
+
 
 /**
  * Implementation of hook_civicrm_caseTypes
