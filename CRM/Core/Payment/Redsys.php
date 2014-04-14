@@ -9,12 +9,13 @@
 require_once 'CRM/Core/Payment.php';
 
 class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
-  CONST CURRENCY_EURO = 978;
-  CONST LANGUAGE_SPANISH = 1;
-  CONST LANGUAGE_BASQUE = 13;
-  CONST LANGUAGE_CATALAN = 3;
-  CONST LANGUAGE_GALICIAN = 12;
-  CONST TRANSACTION_TYPE_OPERATION_STANDARD = 0;
+  CONST REDSYS_CURRENCY_EURO = 978;
+  CONST REDSYS_LANGUAGE_SPANISH = 1;
+  CONST REDSYS_LANGUAGE_BASQUE = 13;
+  CONST REDSYS_LANGUAGE_CATALAN = 3;
+  CONST REDSYS_LANGUAGE_GALICIAN = 12;
+  CONST REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD = 0;
+  CONST REDSYS_RESPONSE_CODE_ACCEPTED = '0000';
 
   /**
   * We only need one instance of this object. So we use the singleton
@@ -113,17 +114,19 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $config = CRM_Core_Config::singleton();    
 
     $redsysParams["Ds_Merchant_Amount"] = $params["amount"] * 100;
-    $redsysParams["Ds_Merchant_Currency"] = self::CURRENCY_EURO;
-    $redsysParams["Ds_Merchant_Order"] = $this->_formatAmount($params["contributionID"], 12);
+    $redsysParams["Ds_Merchant_Currency"] = self::REDSYS_CURRENCY_EURO;
+    $redsysParams["Ds_Merchant_Order"] = self::formatAmount($params["contributionID"], 12);
     $redsysParams["Ds_Merchant_ProductDescription"] = $params["contributionType_name"];
     $redsysParams["Ds_Merchant_Titular"] = $params["first_name"] . " " . $params["last_name"];
     $redsysParams["Ds_Merchant_MerchantCode"] = $this->_paymentProcessor["user_name"];
-    $redsysParams["Ds_Merchant_MerchantURL"] = CRM_Utils_System::url( "civicrm/payment/ipn", "processor_name=Redsys&mode=" . $this->_mode, TRUE );
-    $redsysParams["Ds_Merchant_UrlOK"] = CRM_Utils_System::url( "civicrm/redsys/paymentok", "", TRUE );
-    $redsysParams["Ds_Merchant_UrlKO"] = CRM_Utils_System::url( "civicrm/redsys/paymentko", "", TRUE );
-    $redsysParams["Ds_Merchant_ConsumerLanguage"] = self::LANGUAGE_SPANISH;
+    
+    //$redsysParams["Ds_Merchant_MerchantURL"] = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+    $redsysParams["Ds_Merchant_MerchantURL"] = 'http://redsys2.dev.lspiegel.server.ixiam.lan/civicrm/payment/ipn?processor_name=Redsys&mode=live&md=contribute&qfKey=c2612a79436e641c308aedaa05aa3870_376';
+    $redsysParams["Ds_Merchant_UrlOK"] = $config->userFrameworkBaseURL . "civicrm/contribute/transact?_qf_ThankYou_display=1&qfKey=" . $params["qfKey"];
+    $redsysParams["Ds_Merchant_UrlKO"] = $config->userFrameworkBaseURL . "civicrm/redsys/paymentko";
+    $redsysParams["Ds_Merchant_ConsumerLanguage"] = self::REDSYS_LANGUAGE_SPANISH;
     $redsysParams["Ds_Merchant_Terminal"] = 1;
-    $redsysParams["Ds_Merchant_TransactionType"] = self::TRANSACTION_TYPE_OPERATION_STANDARD;    
+    $redsysParams["Ds_Merchant_TransactionType"] = self::REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD;    
 
     $signature = strtoupper(sha1( $redsysParams["Ds_Merchant_Amount"] .
         $redsysParams["Ds_Merchant_Order"] .
@@ -145,77 +148,107 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $template->assign('redsysURL', $this->_paymentProcessor["url_site"]);
     
     print $template->fetch($tpl);
-    
-    
+    exit();   
   }
 
 
-  /*
-   *  This is the function which handles the response
-   * when zaakpay redirects the user back to our website
-   * after transaction.
-   * Refer to the $this->data['returnURL'] in above function to see how the Url should be created
-   */
-
-  public function handlePaymentNotification() {
-
-    require_once 'CRM/Utils/Array.php';
-
-    $module = CRM_Utils_Array::value('md', $_GET);
-    $qfKey = CRM_Utils_Array::value('qfKey', $_GET);
-    $invoiceId = CRM_Utils_Array::value('inId', $_GET);
-
-    switch ($module) {
-      case 'contribute':
-        if ($_POST['responseCode'] == 100) {
-          $query = "UPDATE civicrm_contribution SET trxn_id='" . $_POST['orderId'] . "', contribution_status_id=1 where invoice_id='" . $invoiceId . "'";
-          CRM_Core_DAO::executeQuery($query);
-          $url = CRM_Utils_System::url('civicrm/contribute/transact', "_qf_ThankYou_display=1&qfKey={$qfKey}", FALSE, NULL, FALSE
-          );
-        }
-        else {
-          CRM_Core_Session::setStatus(ts($_POST['responseDescription']), ts('Zaakpay Error:'), 'error');
-          $url = CRM_Utils_System::url('civicrm/contribute/transact', "_qf_Confirm_display=true&qfKey={$qfKey}", FALSE, NULL, FALSE
-          );
-        }
-
-        break;
-
-      case 'event':
-
-        if ($_POST['responseCode'] == 100) { // success code
-          $participantId = CRM_Utils_Array::value('pid', $_GET);
-          $eventId = CRM_Utils_Array::value('eid', $_GET);
-
-          $query = "UPDATE civicrm_participant SET status_id = 1 where id =" . $participantId . " AND event_id=" . $eventId;
-          CRM_Core_DAO::executeQuery($query);
-
-          $query = "UPDATE civicrm_contribution SET trxn_id='" . $_POST['orderId'] . "', contribution_status_id=1 where invoice_id='" . $invoiceId . "'";
-
-          CRM_Core_DAO::executeQuery($query);
-
-          $url = CRM_Utils_System::url('civicrm/event/register', "_qf_ThankYou_display=1&qfKey={$qfKey}", FALSE, NULL, FALSE
-          );
-        }
-        else { // error code
-          CRM_Core_Session::setStatus(ts($_POST['responseDescription']), ts('Zaakpay Error:'), 'error');
-          $url = CRM_Utils_System::url('civicrm/event/register', "_qf_Confirm_display=true&qfKey={$qfKey}", FALSE, NULL, FALSE
-          );
-        }
-
-        break;
-
-      default:
-        require_once 'CRM/Core/Error.php';
-        CRM_Core_Error::debug_log_message("Could not get module name from request url");
-        echo "Could not get module name from request url\r\n";
+  protected function isValidResponse($params){
+    // MerchantCode is valid
+    if($params['Ds_MerchantCode'] != $this->_paymentProcessor["user_name"]){
+      CRM_Core_Error::debug_log_message("Redsys Response param Ds_MerchantCode incorrect"); 
+      return false;
     }
-    CRM_Utils_System::redirect($url);
+
+    $signature = strtoupper(sha1( $params["Ds_Merchant_Amount"] .
+        $params["Ds_Amount"] .
+        $params["Ds_Order"] .
+        $params["Ds_MerchantCode"] .
+        $params["Ds_Currency"] .
+        $params["Ds_Response"] .
+        $this->_paymentProcessor["password"] )
+    );
+
+    // SHA Signature is valid
+    if($params['Ds_Signature'] != $signature){
+      CRM_Core_Error::debug_log_message("Redsys Response param Ds_Signature incorrect"); 
+      return false;
+    }
+
+    // Contribution exists and is valid
+    $contribution = new CRM_Contribute_BAO_Contribution();
+    $contribution->id = self::trimAmount($params['Ds_Order']);
+    if (!$contribution->find(TRUE)) {
+      CRM_Core_Error::debug_log_message("Could not find contribution record: {$contribution->id} in IPN request: ".print_r($params, TRUE));
+      echo "Failure: Could not find contribution record for {$contribution->id}<p>";
+      return FALSE;
+    }
+
+    return true;  
   }
 
-  protected function _formatAmount($amount, $size, $pad = 0){
+  public function handlePaymentNotification() {   
+    
+    $module = self::retrieve('md', 'String', 'GET', false);
+    $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
+
+    $response = array();
+    $response['Ds_Date']              = self::retrieve('Ds_Date', 'String', 'POST', true);
+    $response['Ds_Hour']              = self::retrieve('Ds_Hour', 'String', 'POST', true);
+    $response['Ds_SecurePayment']     = self::retrieve('Ds_SecurePayment', 'String', 'POST', true);
+    $response['Ds_Card_Country']      = self::retrieve('Ds_Card_Country', 'Integer', 'POST', true);
+    $response['Ds_Amount']            = self::retrieve('Ds_Amount', 'Integer', 'POST', true);
+    $response['Ds_Currency']          = self::retrieve('Ds_Currency', 'Integer', 'POST', true);
+    $response['Ds_Order']             = self::retrieve('Ds_Order', 'String', 'POST', true);
+    $response['Ds_MerchantCode']      = self::retrieve('Ds_MerchantCode', 'String', 'POST', true);
+    $response['Ds_Terminal']          = self::retrieve('Ds_Terminal', 'String', 'POST', true);
+    $response['Ds_Signature']         = self::retrieve('Ds_Signature', 'String', 'POST', true);
+    $response['Ds_Response']          = self::retrieve('Ds_Response', 'String', 'POST', true);
+    $response['Ds_MerchantData']      = self::retrieve('Ds_MerchantData', 'String', 'POST', true);
+    $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', true);
+    $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', true);
+    $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);
+
+    if($this->isValidResponse($params)){
+      switch ($module) {
+        case 'contribute':
+          if ($response['Ds_Response'] == REDSYS_RESPONSE_CODE_ACCEPTED) {
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            CRM_Core_DAO::executeQuery($query);          
+          }
+          else {
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            CRM_Core_DAO::executeQuery($query);
+          }
+          break;
+        case 'event':
+          // ToDo: Implement for Event Fees
+          break;
+        default:
+          require_once 'CRM/Core/Error.php';
+          CRM_Core_Error::debug_log_message("Could not get module name from request url");
+          echo "Could not get module name from request url\r\n";
+      }
+    }
+  }
+
+  static function formatAmount($amount, $size, $pad = 0){
     $amount_str = preg_replace('/[\.,]/', '', strval($amount));
     $amount_str = str_pad($amount_str, $size, $pad, STR_PAD_LEFT);
     return $amount_str;
+  }
+
+  static function trimAmount($amount, $pad = '0'){
+    return ltrim(trim($data), $pad);
+  }
+
+  static function retrieve($name, $type, $location = 'POST', $abort = true) {
+    static $store = null;
+    $value = CRM_Utils_Request::retrieve($name, $type, $store, false, null, $location);
+    if ($abort && $value === null) {
+      CRM_Core_Error::debug_log_message("Could not find an entry for $name in $location");
+      echo "Failure: Missing Parameter<p>";
+      exit();
+    }
+    return $value;
   }
 }
