@@ -120,8 +120,9 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $redsysParams["Ds_Merchant_Titular"] = $params["first_name"] . " " . $params["last_name"];
     $redsysParams["Ds_Merchant_MerchantCode"] = $this->_paymentProcessor["user_name"];
     
-    //$redsysParams["Ds_Merchant_MerchantURL"] = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
-    $redsysParams["Ds_Merchant_MerchantURL"] = 'http://redsys2.dev.lspiegel.server.ixiam.lan/civicrm/payment/ipn?processor_name=Redsys&mode=live&md=contribute&qfKey=c2612a79436e641c308aedaa05aa3870_376';
+       
+    $merchantUrl = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+    $redsysParams["Ds_Merchant_MerchantURL"] = $merchantUrl;
     $redsysParams["Ds_Merchant_UrlOK"] = $config->userFrameworkBaseURL . "civicrm/contribute/transact?_qf_ThankYou_display=1&qfKey=" . $params["qfKey"];
     $redsysParams["Ds_Merchant_UrlKO"] = $config->userFrameworkBaseURL . "civicrm/redsys/paymentko";
     $redsysParams["Ds_Merchant_ConsumerLanguage"] = self::REDSYS_LANGUAGE_SPANISH;
@@ -153,7 +154,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
 
 
   protected function isValidResponse($params){
-    // MerchantCode is valid
+    // MerchantCode is valid  
     if($params['Ds_MerchantCode'] != $this->_paymentProcessor["user_name"]){
       CRM_Core_Error::debug_log_message("Redsys Response param Ds_MerchantCode incorrect"); 
       return false;
@@ -169,7 +170,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     );
 
     // SHA Signature is valid
-    if($params['Ds_Signature'] != $signature){
+    if($params['Ds_Signature'] != $signature){    
       CRM_Core_Error::debug_log_message("Redsys Response param Ds_Signature incorrect"); 
       return false;
     }
@@ -186,8 +187,27 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     return true;  
   }
 
-  public function handlePaymentNotification() {   
-    
+  public function handlePaymentNotification() {      
+
+
+    $errors = array(
+      "101" => "Tarjeta caducada",
+      "102" => "Tarjeta en excepción transitoria o bajo sospecha de fraude",
+      "104" => "Operación no permitida para esa tarjeta o terminal",
+      "9104" => "Operación no permitida para esa tarjeta o terminal",
+      "116" => "Disponible insuficiente",
+      "118" => "Tarjeta no registrada",
+      "129" => "Código de seguridad (CVV2/CVC2) incorrecto",
+      "180" => "Tarjeta ajena al servicio",
+      "184" => "Error en la autenticación del titular",
+      "190" => "Denegación sin especificar Motivo",
+      "191" => "Fecha de caducidad errónea",
+      "202" => "Tarjeta en excepción transitoria o bajo sospecha de fraude con retirada de tarjeta",
+      "912" => " Emisor no disponible",
+      "9912" => "Emisor no disponible",
+    );
+
+
     $module = self::retrieve('md', 'String', 'GET', false);
     $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
 
@@ -206,17 +226,24 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $response['Ds_MerchantData']      = self::retrieve('Ds_MerchantData', 'String', 'POST', true);
     $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', true);
     $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', true);
-    $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);
+    $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);     
 
-    if($this->isValidResponse($params)){
+
+    if($this->isValidResponse($response)){
       switch ($module) {
         case 'contribute':
-          if ($response['Ds_Response'] == REDSYS_RESPONSE_CODE_ACCEPTED) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+          if ($response['Ds_Response'] == self::REDSYS_RESPONSE_CODE_ACCEPTED) {            
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";            
             CRM_Core_DAO::executeQuery($query);          
           }
           else {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            $error = self::trimAmount($response['Ds_Response']);
+            if(array_key_exists($error, $errors)) {
+              $error = $errors[$error];
+            }
+            $cancel_date = CRM_Utils_Date::currentDBDate();
+
+            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($response['Ds_Order']) . "'";            
             CRM_Core_DAO::executeQuery($query);
           }
           break;
@@ -224,8 +251,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
           // ToDo: Implement for Event Fees
           break;
         default:
-          require_once 'CRM/Core/Error.php';
-          CRM_Core_Error::debug_log_message("Could not get module name from request url");
+          require_once 'CRM/Core/Error.php';    
           echo "Could not get module name from request url\r\n";
       }
     }
@@ -238,7 +264,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
   }
 
   static function trimAmount($amount, $pad = '0'){
-    return ltrim(trim($data), $pad);
+    return ltrim(trim($amount), $pad);
   }
 
   static function retrieve($name, $type, $location = 'POST', $abort = true) {
