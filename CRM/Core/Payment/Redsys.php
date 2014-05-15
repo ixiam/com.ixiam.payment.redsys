@@ -109,37 +109,63 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
    * This function calls the Redsys servers and sends them information
    * about the payment.
    */
-  function doTransferCheckout( &$params, $component ) {
+  function doTransferCheckout(&$params, $component = 'contribute') {
     
-    $config = CRM_Core_Config::singleton();    
+    $config = CRM_Core_Config::singleton();
+
+    if ($component != 'contribute' && $component != 'event') {
+      CRM_Core_Error::fatal(ts('Component is invalid'));
+    }
+
+    if ($component == 'event') {
+      $notifyURL .= "&eventID={$params['eventID']}&participantID={$params['participantID']}";
+    }
+
+    $url       = ($component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
+    $cancel    = ($component == 'event') ? '_qf_Register_display' : '_qf_Main_display';
+    $returnURL = CRM_Utils_System::url($url,
+      "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
+      TRUE, NULL, FALSE
+    );
+
+
+    $cancelUrlString = "$cancel=1&cancel=1&qfKey={$params['qfKey']}";
+    if (CRM_Utils_Array::value('is_recur', $params)) {
+      $cancelUrlString .= "&isRecur=1&recurId={$params['contributionRecurID']}&contribId={$params['contributionID']}";
+    }
+
+    $cancelURL = CRM_Utils_System::url(
+      $url,
+      $cancelUrlString,
+      TRUE, NULL, FALSE
+    );
+
 
     $redsysParams["Ds_Merchant_Amount"] = $params["amount"] * 100;
     $redsysParams["Ds_Merchant_Currency"] = self::REDSYS_CURRENCY_EURO;
     $redsysParams["Ds_Merchant_Order"] = self::formatAmount($params["contributionID"], 12);
     $redsysParams["Ds_Merchant_ProductDescription"] = $params["contributionType_name"];
     $redsysParams["Ds_Merchant_Titular"] = $params["first_name"] . " " . $params["last_name"];
-    $redsysParams["Ds_Merchant_MerchantCode"] = $this->_paymentProcessor["user_name"];
-    
+    $redsysParams["Ds_Merchant_MerchantCode"] = $this->_paymentProcessor["user_name"];    
        
     $merchantUrl = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
     $redsysParams["Ds_Merchant_MerchantURL"] = $merchantUrl;
-    $redsysParams["Ds_Merchant_UrlOK"] = $config->userFrameworkBaseURL . "civicrm/contribute/transact?_qf_ThankYou_display=1&qfKey=" . $params["qfKey"];
-    $redsysParams["Ds_Merchant_UrlKO"] = $config->userFrameworkBaseURL . "civicrm/redsys/paymentko";
+    $redsysParams["Ds_Merchant_UrlOK"] =  $returnURL;
+    $redsysParams["Ds_Merchant_UrlKO"] = $cancelURL;
     $redsysParams["Ds_Merchant_ConsumerLanguage"] = self::REDSYS_LANGUAGE_SPANISH;
     $redsysParams["Ds_Merchant_Terminal"] = 1;
     $redsysParams["Ds_Merchant_TransactionType"] = self::REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD;    
 
     $signature = strtoupper(sha1( $redsysParams["Ds_Merchant_Amount"] .
-        $redsysParams["Ds_Merchant_Order"] .
-        $redsysParams["Ds_Merchant_MerchantCode"] .
-        $redsysParams["Ds_Merchant_Currency"] .
-        $redsysParams["Ds_Merchant_TransactionType"] .
-        $redsysParams["Ds_Merchant_MerchantURL"] .
-        $this->_paymentProcessor["password"] )
+      $redsysParams["Ds_Merchant_Order"] .
+      $redsysParams["Ds_Merchant_MerchantCode"] .
+      $redsysParams["Ds_Merchant_Currency"] .
+      $redsysParams["Ds_Merchant_TransactionType"] .
+      $redsysParams["Ds_Merchant_MerchantURL"] .
+      $this->_paymentProcessor["password"] )
     );
 
-    $redsysParams["Ds_Merchant_MerchantSignature"] = $signature;   
-
+    $redsysParams["Ds_Merchant_MerchantSignature"] = $signature;
 
     // Print the tpl to redirect and send POST variables to RedSys Getaway
     $template = CRM_Core_Smarty::singleton();
@@ -148,8 +174,9 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $template->assign('redsysParams', $redsysParams);
     $template->assign('redsysURL', $this->_paymentProcessor["url_site"]);
     
-    print $template->fetch($tpl);
-    exit();   
+    print $template->fetch($tpl);    
+    
+    CRM_Utils_System::civiExit();
   }
 
 
@@ -187,8 +214,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     return true;  
   }
 
-  public function handlePaymentNotification() {      
-
+  public function handlePaymentNotification() {          
 
     $errors = array(
       "101" => "Tarjeta caducada",
@@ -227,7 +253,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', true);
     $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', true);
     $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);     
-
+    
 
     if($this->isValidResponse($response)){
       switch ($module) {
@@ -248,8 +274,22 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
           }
           break;
         case 'event':
-          // ToDo: Implement for Event Fees
-          break;
+          if ($response['Ds_Response'] == self::REDSYS_RESPONSE_CODE_ACCEPTED) {            
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";            
+            CRM_Core_DAO::executeQuery($query);          
+          }
+          else {
+            $error = self::trimAmount($response['Ds_Response']);
+            if(array_key_exists($error, $errors)) {
+              $error = $errors[$error];
+            }
+            $cancel_date = CRM_Utils_Date::currentDBDate();
+
+            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($response['Ds_Order']) . "'";            
+            CRM_Core_DAO::executeQuery($query);
+          }
+          break;        
+          
         default:
           require_once 'CRM/Core/Error.php'; 
           CRM_Core_Error::debug_log_message("Could not get module name from request url");             
