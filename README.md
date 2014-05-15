@@ -21,6 +21,7 @@ If you are using **CiviCRM < 4.4.5** you must enable the patch that comes with t
 
 INSTALLATION
 ------------
+
 1) Extract the content of this extension in your CiviCRM extensions' directory
 
 2) Install Extension in CiviCRM (Administer / System Settings / Manage Extensions).
@@ -28,7 +29,13 @@ For more details on Extensions: https://wiki.civicrm.org/confluence/display/CRMD
 
 3) Add a new Payment Processor (Administer / System Settings / Payment Processor)
 
-4) Select Redsys Payment Processor y configure it with your Mechant Account Id (*Número de Comercio*) and Encription Password (*Clave Secreta de Encriptación*)
+4) Select Redsys Payment Processor y configure it with your Mechant Account Id (*NÃºmero de Comercio*) and Encription Password (*Clave Secreta de EncriptaciÃ³n*)
+
+
+ToDo
+-----
+
+1) Change Participant's Status based on Redsys IPN Callback. The Business Logic needs to be defined here (If applies)
 
 
 AUTHOR INFO
@@ -40,4 +47,4 @@ http:///www.ixiam.com
 
 Luciano Spiegel <l.spiegel@ixiam.com>
 
-Rubén Pineda <r.pineda@ixiam.com>
+RubÃ©n Pineda <r.pineda@ixiam.com>
