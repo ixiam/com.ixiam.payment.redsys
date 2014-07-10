@@ -2,7 +2,8 @@
 
 This is a Payment Processor for CiviCRM that allows you to work with Redsys from within CiviCRM.
 
-For more information about CiviCRM payment processors, see: http://book.civicrm.org/user/current/contributions/payment-processors/
+For more information about CiviCRM payment processors, see:
+http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Contact ##
 
@@ -23,22 +24,23 @@ This is a standard CiviCRM extension and can be directly installed from your Civ
 
 ### Standard installation process ###
 
-Fore more information about how to install CiviCRM extensions, see: http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions
+Fore more information about how to install CiviCRM extensions, see:
+http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions
 
 ### Manual installation process ###
 
 You can also install this extension manually:
 
-# Extract the content of this extension in your CiviCRM extensions directory
-# Install Extension in CiviCRM (Administer / System Settings / Manage Extensions)
+* Extract the content of this extension in your CiviCRM extensions directory
+* Install Extension in CiviCRM (Administer / System Settings / Manage Extensions)
 
 ### Configuration ###
 
 After installing and activating the extension, you'll need to configure your payment processor:
 
-# Add a new Payment Processor (Administer / System Settings / Payment Processor)
-# Select Redsys Payment Processor as Payment Processor Type
-# Configure it with your Mechant Account Id (número de comercio) and Encription Password (clave secreta de encriptación)
+* Add a new Payment Processor (Administer / System Settings / Payment Processor)
+* Select Redsys Payment Processor as Payment Processor Type
+* Configure it with your Mechant Account Id (número de comercio) and Encription Password (clave secreta de encriptación)
 
 ### Requirements ###
 
