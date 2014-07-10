@@ -9,14 +9,9 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 The project has been managed by Amnesty International Spain (https://www.es.amnesty.org) in collaboration with iXiam Global Solutions (http://www.ixiam.com).
 
-### Project Manager ###
-
-* Carlos Capote <ccapote@es.amnesty.org>
-
-### Developers ###
-
-* Luciano Spiegel <l.spiegel@ixiam.com>
-* Rubén Pineda <r.pineda@ixiam.com>
+* Carlos Capote (project manager): <ccapote@es.amnesty.org>
+* Luciano Spiegel (developer): <l.spiegel@ixiam.com>
+* Rubén Pineda (developer): <r.pineda@ixiam.com>
 
 ## How to install ##
 
