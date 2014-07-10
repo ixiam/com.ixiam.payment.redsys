@@ -17,17 +17,10 @@ The project has been managed by Amnesty International Spain (https://www.es.amne
 
 This is a standard CiviCRM extension and can be directly installed from your CiviCRM instance.
 
-### Standard installation process ###
-
-Fore more information about how to install CiviCRM extensions, see:
-http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions
-
-### Manual installation process ###
-
-You can also install this extension manually:
-
-* Extract the content of this extension in your CiviCRM extensions directory
-* Install Extension in CiviCRM (Administer / System Settings / Manage Extensions)
+* Standard installation process: Fore more information about how to install CiviCRM extensions, see: http://wiki.civicrm.org/confluence/display/CRMDOC/Extensions
+* Manual installation process: You can also install this extension manually:
+* * Extract the content of this extension in your CiviCRM extensions directory
+* * Install Extension in CiviCRM (Administer / System Settings / Manage Extensions)
 
 ### Configuration ###
 
@@ -43,9 +36,7 @@ This payment processor works with CiviCRM 4.4 or newer versions.
 
 Prior to CiviCRM 4.4.5, there is a bug that affects Payment Processors. If your using a prior version (< 4.4.5), you must apply the following patch.
 
-### Patch for CiviCRM < 4.4.5 ###
-
-The payment processor includes the file `CRM/Core/Payment.patched.php`. To apply the patch, rename it to `CRM/Core/Payment.php`.
+Patch for CiviCRM < 4.4.5: The payment processor includes the file `CRM/Core/Payment.patched.php`. To apply the patch, rename it to `CRM/Core/Payment.php`.
 
 More info here: https://issues.civicrm.org/jira/browse/CRM-14396
 
