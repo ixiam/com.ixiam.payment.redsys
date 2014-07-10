@@ -12,7 +12,6 @@
           form.submit();
         }
         submitForm();
-        //alert("ok");
       </script>
     {/literal}
 </html>
