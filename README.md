@@ -24,6 +24,8 @@ This is a standard CiviCRM extension and can be directly installed from your Civ
 
 ### Configuration ###
 
+![Screenshot](https://raw.githubusercontent.com/amnesty/civicrm-redsys/master/res/payment-processor-config.png "Screenshot")
+
 After installing and activating the extension, you'll need to configure your payment processor:
 
 * Add a new Payment Processor (Administer / System Settings / Payment Processor)
