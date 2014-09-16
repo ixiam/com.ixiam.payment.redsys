@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * CiviCRM Payment Processor for Redsys (before called Sermepa).
  *
