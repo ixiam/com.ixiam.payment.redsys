@@ -241,20 +241,20 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
 
     $response = array();
-    $response['Ds_Date']              = self::retrieve('Ds_Date', 'String', 'POST', true);
-    $response['Ds_Hour']              = self::retrieve('Ds_Hour', 'String', 'POST', true);
-    $response['Ds_SecurePayment']     = self::retrieve('Ds_SecurePayment', 'String', 'POST', true);
-    $response['Ds_Card_Country']      = self::retrieve('Ds_Card_Country', 'Integer', 'POST', true);
+    $response['Ds_Date']              = self::retrieve('Ds_Date', 'String', 'POST', false);
+    $response['Ds_Hour']              = self::retrieve('Ds_Hour', 'String', 'POST', false);
+    $response['Ds_SecurePayment']     = self::retrieve('Ds_SecurePayment', 'String', 'POST', false);
+    $response['Ds_Card_Country']      = self::retrieve('Ds_Card_Country', 'Integer', 'POST', false);
     $response['Ds_Amount']            = self::retrieve('Ds_Amount', 'Integer', 'POST', true);
     $response['Ds_Currency']          = self::retrieve('Ds_Currency', 'Integer', 'POST', true);
     $response['Ds_Order']             = self::retrieve('Ds_Order', 'String', 'POST', true);
     $response['Ds_MerchantCode']      = self::retrieve('Ds_MerchantCode', 'String', 'POST', true);
-    $response['Ds_Terminal']          = self::retrieve('Ds_Terminal', 'String', 'POST', true);
+    $response['Ds_Terminal']          = self::retrieve('Ds_Terminal', 'String', 'POST', false);
     $response['Ds_Signature']         = self::retrieve('Ds_Signature', 'String', 'POST', true);
     $response['Ds_Response']          = self::retrieve('Ds_Response', 'String', 'POST', true);
-    $response['Ds_MerchantData']      = self::retrieve('Ds_MerchantData', 'String', 'POST', true);
-    $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', true);
-    $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', true);
+    $response['Ds_MerchantData']      = self::retrieve('Ds_MerchantData', 'String', 'POST', false);
+    $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', false);
+    $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', false);
     $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);
 
 
