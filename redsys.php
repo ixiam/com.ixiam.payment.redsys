@@ -28,6 +28,21 @@ function redsys_civicrm_xmlMenu(&$files) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
 function redsys_civicrm_install() {
+  $params = array(
+    'version' => 3,
+    'name' => 'Redsys',
+    'title' => 'Redsys Payment Processor',
+    'description' => 'Works with Servired (Sermepa) and 4B (Pasat).',
+    'class_name' => 'Payment_Redsys',
+    'billing_mode' => 'notify',
+    'user_name_label' => 'Número de comercio',
+    'password_label' => 'Clave secreta de encriptación',
+    'url_site_default'=> 'https://sis.redsys.es/sis/realizarPago',
+    'url_site_test_default' => 'https://sis-t.redsys.es:25443/sis/realizarPago',
+    'is_recur' => 0,
+    'payment_type' => 1,
+  );
+  $result = civicrm_api('PaymentProcessorType', 'create', $params);
   return _redsys_civix_civicrm_install();
 }
 
@@ -37,6 +52,23 @@ function redsys_civicrm_install() {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
  */
 function redsys_civicrm_uninstall() {
+  $params = array(
+    'version' => 3,
+    'sequential' => 1,
+    'name' => 'Redsys',
+  );
+  $result = civicrm_api('PaymentProcessorType', 'get', $params);
+  if($result["count"] == 1) {
+    $params = array(
+      'version' => 3,
+      'sequential' => 1,
+      'id' => $result["id"],
+    );
+    $result = civicrm_api('PaymentProcessorType', 'delete', $params);
+  }
+
+
+
   return _redsys_civix_civicrm_uninstall();
 }
 
@@ -73,35 +105,6 @@ function redsys_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
   return _redsys_civix_civicrm_upgrade($op, $queue);
 }
 
-/**
- * Implementation of hook_civicrm_managed
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
- */
-function redsys_civicrm_managed(&$entities) {
-  $entities[] = array(
-    'module' => 'com.ixiam.payment.redsys',
-    'name' => 'Redsys Payment Processor',
-    'entity' => 'PaymentProcessorType',
-    'params' => array(
-      'version' => 3,
-      'name' => 'Redsys',
-      'title' => 'Redsys Payment Processor',
-      'description' => 'Works with Servired (Sermepa) and 4B (Pasat).',
-      'class_name' => 'Payment_Redsys',
-      'billing_mode' => 'notify',
-      'user_name_label' => 'Número de comercio',
-      'password_label' => 'Clave secreta de encriptación',
-      'url_site_default'=> 'https://sis.redsys.es/sis/realizarPago',
-      'url_site_test_default' => 'https://sis-t.redsys.es:25443/sis/realizarPago',
-      'is_recur' => 0,
-      'payment_type' => 1
-    ),
-  );
-}
 
 
 

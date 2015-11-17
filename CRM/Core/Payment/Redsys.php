@@ -7,6 +7,7 @@
  */
 
 require_once 'CRM/Core/Payment.php';
+require_once 'includes/apiRedsys.php';
 
 class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
   CONST REDSYS_CURRENCY_EURO = 978;
@@ -136,45 +137,50 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
       TRUE, NULL, FALSE
     );
 
-
-    $redsysParams["Ds_Merchant_Amount"] = $params["amount"] * 100;
-    $redsysParams["Ds_Merchant_Currency"] = self::REDSYS_CURRENCY_EURO;
-    $redsysParams["Ds_Merchant_Order"] = self::formatAmount($params["contributionID"], 12);
-    $redsysParams["Ds_Merchant_ProductDescription"] = $params["contributionType_name"];
-    $redsysParams["Ds_Merchant_Titular"] = $params["first_name"] . " " . $params["last_name"];
-    $redsysParams["Ds_Merchant_MerchantCode"] = $this->_paymentProcessor["user_name"];
-
     $merchantUrl = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+
+    $miObj = new RedsysAPI;
+    $miObj->setParameter("DS_MERCHANT_AMOUNT",$params["amount"] * 100);
+    $miObj->setParameter("DS_MERCHANT_ORDER",strval(self::formatAmount($params["contributionID"], 12)));
+    $miObj->setParameter("DS_MERCHANT_MERCHANTCODE",$this->_paymentProcessor["user_name"]);
+    $miObj->setParameter("DS_MERCHANT_CURRENCY",self::REDSYS_CURRENCY_EURO);
+    $miObj->setParameter("DS_MERCHANT_TRANSACTIONTYPE",self::REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD);
+    $miObj->setParameter("DS_MERCHANT_TERMINAL",1);
+    $miObj->setParameter("DS_MERCHANT_MERCHANTURL",$merchantUrl);
+    $miObj->setParameter("DS_MERCHANT_URLOK",$returnURL);
+    $miObj->setParameter("DS_MERCHANT_URLKO",$cancelURL);    
+
+    $miObj->setParameter("DS_MERCHANT_PRODUCTDESCRIPTION",$params["contributionType_name"]);
+    $miObj->setParameter("DS_MERCHANT_TITULAR",$params["first_name"] . " " . $params["last_name"]   );
+    $miObj->setParameter("DS_MERCHANT_CONSUMERLANGUAGE",self::REDSYS_LANGUAGE_SPANISH);
+
+    
+    $version="HMAC_SHA256_V1";
+    
+
+    
+    $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);
+
     // ToDo: Set Participant Status based on Contribution IPN Completed / Rejected
     /*
     if ($component == 'event') {
       $merchantUrl .= "&eventID={$params['eventID']}&participantID={$params['participantID']}";
     }
-    */
-
-    $redsysParams["Ds_Merchant_MerchantURL"] = $merchantUrl;
-    $redsysParams["Ds_Merchant_UrlOK"] =  $returnURL;
-    $redsysParams["Ds_Merchant_UrlKO"] = $cancelURL;
-    $redsysParams["Ds_Merchant_ConsumerLanguage"] = self::REDSYS_LANGUAGE_SPANISH;
-    $redsysParams["Ds_Merchant_Terminal"] = 1;
-    $redsysParams["Ds_Merchant_TransactionType"] = self::REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD;
-
-    $signature = strtoupper(sha1( $redsysParams["Ds_Merchant_Amount"] .
-      $redsysParams["Ds_Merchant_Order"] .
-      $redsysParams["Ds_Merchant_MerchantCode"] .
-      $redsysParams["Ds_Merchant_Currency"] .
-      $redsysParams["Ds_Merchant_TransactionType"] .
-      $redsysParams["Ds_Merchant_MerchantURL"] .
-      $this->_paymentProcessor["password"] )
-    );
-
-    $redsysParams["Ds_Merchant_MerchantSignature"] = $signature;
+    */       
 
     // Print the tpl to redirect and send POST variables to RedSys Getaway
     $template = CRM_Core_Smarty::singleton();
     $tpl = 'CRM/Core/Payment/Redsys.tpl';
 
-    $template->assign('redsysParams', $redsysParams);
+    
+    $template->assign('signature', $signature);
+    $redsysParamsJSON = $miObj->createMerchantParameters();
+    $template->assign('redsysParamsJSON', $redsysParamsJSON);
+    $template->assign('version', $version);
+    
+    CRM_Core_Error::debug($redsysParamsJSON);die;
+
+
     $template->assign('redsysURL', $this->_paymentProcessor["url_site"]);
 
     print $template->fetch($tpl);
