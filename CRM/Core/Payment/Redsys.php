@@ -160,6 +160,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
 
     
     $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);
+    //$signature = $this->_paymentProcessor["password"];
 
     // ToDo: Set Participant Status based on Contribution IPN Completed / Rejected
     /*
@@ -178,7 +179,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $template->assign('redsysParamsJSON', $redsysParamsJSON);
     $template->assign('version', $version);
     
-    CRM_Core_Error::debug($redsysParamsJSON);die;
+
 
 
     $template->assign('redsysURL', $this->_paymentProcessor["url_site"]);
@@ -246,25 +247,21 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $module = self::retrieve('md', 'String', 'GET', false);
     $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
 
+
+    $miObj = new RedsysAPI;
+
+
+
     $response = array();
-    $response['Ds_Date']              = self::retrieve('Ds_Date', 'String', 'POST', false);
-    $response['Ds_Hour']              = self::retrieve('Ds_Hour', 'String', 'POST', false);
-    $response['Ds_SecurePayment']     = self::retrieve('Ds_SecurePayment', 'String', 'POST', false);
-    $response['Ds_Card_Country']      = self::retrieve('Ds_Card_Country', 'Integer', 'POST', false);
-    $response['Ds_Amount']            = self::retrieve('Ds_Amount', 'Integer', 'POST', true);
-    $response['Ds_Currency']          = self::retrieve('Ds_Currency', 'Integer', 'POST', true);
-    $response['Ds_Order']             = self::retrieve('Ds_Order', 'String', 'POST', true);
-    $response['Ds_MerchantCode']      = self::retrieve('Ds_MerchantCode', 'String', 'POST', true);
-    $response['Ds_Terminal']          = self::retrieve('Ds_Terminal', 'String', 'POST', false);
-    $response['Ds_Signature']         = self::retrieve('Ds_Signature', 'String', 'POST', true);
-    $response['Ds_Response']          = self::retrieve('Ds_Response', 'String', 'POST', true);
-    $response['Ds_MerchantData']      = self::retrieve('Ds_MerchantData', 'String', 'POST', false);
-    $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', false);
-    $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', false);
-    $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);
+    $response["version"] = $_POST["Ds_SignatureVersion"];
+    $response["parameters"] = $_POST["Ds_MerchantParameters"];
+    $response["signature"] = $_POST["Ds_Signature"];
 
+    $decodec = $miObj->decodeMerchantParameters($response["parameters"]);      
+    
+    $firma = $miObj->createMerchantSignatureNotif($this->_paymentProcessor["password"],$response["parameters"]);  
 
-    if($this->isValidResponse($response)){
+    if ($firma === $response["signature"]){
       switch ($module) {
         case 'contribute':
           if ($response['Ds_Response'] == self::REDSYS_RESPONSE_CODE_ACCEPTED) {
@@ -303,7 +300,27 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
           require_once 'CRM/Core/Error.php';
           CRM_Core_Error::debug_log_message("Could not get module name from request url");
       }
-    }
+    }     
+    // $response['Ds_Date']              = self::retrieve('Ds_Date', 'String', 'POST', false);
+    // $response['Ds_Hour']              = self::retrieve('Ds_Hour', 'String', 'POST', false);
+    // $response['Ds_SecurePayment']     = self::retrieve('Ds_SecurePayment', 'String', 'POST', false);
+    // $response['Ds_Card_Country']      = self::retrieve('Ds_Card_Country', 'Integer', 'POST', false);
+    // $response['Ds_Amount']            = self::retrieve('Ds_Amount', 'Integer', 'POST', true);
+    // $response['Ds_Currency']          = self::retrieve('Ds_Currency', 'Integer', 'POST', true);
+    // $response['Ds_Order']             = self::retrieve('Ds_Order', 'String', 'POST', true);
+    // $response['Ds_MerchantCode']      = self::retrieve('Ds_MerchantCode', 'String', 'POST', true);
+    // $response['Ds_Terminal']          = self::retrieve('Ds_Terminal', 'String', 'POST', false);
+    // $response['Ds_Signature']         = self::retrieve('Ds_Signature', 'String', 'POST', true);
+    // $response['Ds_Response']          = self::retrieve('Ds_Response', 'String', 'POST', true);
+    // $response['Ds_MerchantData']      = self::retrieve('Ds_MerchantData', 'String', 'POST', false);
+    // $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', false);
+    // $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', false);
+    // $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);
+
+
+    
+      
+    
   }
 
   static function formatAmount($amount, $size, $pad = 0){

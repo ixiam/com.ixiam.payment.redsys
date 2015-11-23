@@ -1,11 +1,11 @@
 <html>
-  <body>
+  <body>    
     <form action="{$redsysURL}" method="post">
   
-    <input type="hidden" name="{$key}" value="{$value}" />
-    <input type="text" name="Ds_SignatureVersion" value="{$version}"/></br>
-    <input type="text" name="Ds_MerchantParameters" value="{$redsysParamsJSON}"/></br>
-    <input type="text" name="Ds_Signature" value="{$signature}"/></br>
+    
+    <input type="hidden" name="Ds_SignatureVersion" value="{$version}"/></br>
+    <input type="hidden" name="Ds_MerchantParameters" value="{$redsysParamsJSON}"/></br>
+    <input type="hidden" name="Ds_Signature" value="{$signature}"/></br>
   
     </form>
     {literal}
