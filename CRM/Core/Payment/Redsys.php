@@ -153,35 +153,19 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $miObj->setParameter("DS_MERCHANT_PRODUCTDESCRIPTION",$params["contributionType_name"]);
     $miObj->setParameter("DS_MERCHANT_TITULAR",$params["first_name"] . " " . $params["last_name"]   );
     $miObj->setParameter("DS_MERCHANT_CONSUMERLANGUAGE",self::REDSYS_LANGUAGE_SPANISH);
-
     
     $version="HMAC_SHA256_V1";
     
-
-    
-    $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);
-    //$signature = $this->_paymentProcessor["password"];
-
-    // ToDo: Set Participant Status based on Contribution IPN Completed / Rejected
-    /*
-    if ($component == 'event') {
-      $merchantUrl .= "&eventID={$params['eventID']}&participantID={$params['participantID']}";
-    }
-    */       
+    $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);    
 
     // Print the tpl to redirect and send POST variables to RedSys Getaway
     $template = CRM_Core_Smarty::singleton();
     $tpl = 'CRM/Core/Payment/Redsys.tpl';
-
     
     $template->assign('signature', $signature);
     $redsysParamsJSON = $miObj->createMerchantParameters();
     $template->assign('redsysParamsJSON', $redsysParamsJSON);
     $template->assign('version', $version);
-    
-
-
-
     $template->assign('redsysURL', $this->_paymentProcessor["url_site"]);
 
     print $template->fetch($tpl);
@@ -192,11 +176,6 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
 
   protected function isValidResponse($params){
     // MerchantCode is valid
-    if($params['Ds_MerchantCode'] != $this->_paymentProcessor["user_name"]){
-      CRM_Core_Error::debug_log_message("Redsys Response param Ds_MerchantCode incorrect");
-      return false;
-    }
-
     $signature = strtoupper(sha1( $params["Ds_Merchant_Amount"] .
         $params["Ds_Amount"] .
         $params["Ds_Order"] .
@@ -212,14 +191,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
       return false;
     }
 
-    // Contribution exists and is valid
-    $contribution = new CRM_Contribute_BAO_Contribution();
-    $contribution->id = self::trimAmount($params['Ds_Order']);
-    if (!$contribution->find(TRUE)) {
-      CRM_Core_Error::debug_log_message("Could not find contribution record: {$contribution->id} in IPN request: ".print_r($params, TRUE));
-      echo "Failure: Could not find contribution record for {$contribution->id}<p>";
-      return FALSE;
-    }
+
 
     return true;
   }
@@ -250,48 +222,62 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
 
     $miObj = new RedsysAPI;
 
-
-
     $response = array();
     $response["version"] = $_POST["Ds_SignatureVersion"];
     $response["parameters"] = $_POST["Ds_MerchantParameters"];
     $response["signature"] = $_POST["Ds_Signature"];
 
-    $decodec = $miObj->decodeMerchantParameters($response["parameters"]);      
+    $decodecResponseJson = $miObj->decodeMerchantParameters($response["parameters"]);      
+    $decodecResponse = json_decode($decodecResponseJson);
     
     $firma = $miObj->createMerchantSignatureNotif($this->_paymentProcessor["password"],$response["parameters"]);  
+    
 
-    if ($firma === $response["signature"]){
+    // Validations
+    if($decodecResponse->Ds_MerchantCode != $this->_paymentProcessor["user_name"]){
+      CRM_Core_Error::debug_log_message("Redsys Response param Ds_MerchantCode incorrect");
+      return false;
+    }
+    // Contribution exists and is valid
+    $contribution = new CRM_Contribute_BAO_Contribution();
+    $contribution->id = self::trimAmount($decodecResponse->Ds_Order);
+    if (!$contribution->find(TRUE)) {
+      CRM_Core_Error::debug_log_message("Could not find contribution record: {$contribution->id} in IPN request: ".print_r($params, TRUE));
+      echo "Failure: Could not find contribution record for {$contribution->id}<p>";
+      return FALSE;
+    }
+    
+
+    if ($firma === $response["signature"]) {   
       switch ($module) {
-        case 'contribute':
-          if ($response['Ds_Response'] == self::REDSYS_RESPONSE_CODE_ACCEPTED) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+        case 'contribute':          
+          if ($decodecResponse->Ds_Response == self::REDSYS_RESPONSE_CODE_ACCEPTED) {           
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $decodecResponse->Ds_AuthorisationCode . "', contribution_status_id=1 where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";            
             CRM_Core_DAO::executeQuery($query);
           }
           else {
-            $error = self::trimAmount($response['Ds_Response']);
+            $error = self::trimAmount($decodecResponse->Ds_Response);
             if(array_key_exists($error, $errors)) {
               $error = $errors[$error];
             }
             $cancel_date = CRM_Utils_Date::currentDBDate();
 
-            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";            
             CRM_Core_DAO::executeQuery($query);
           }
           break;
         case 'event':
-          if ($response['Ds_Response'] == self::REDSYS_RESPONSE_CODE_ACCEPTED) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $response['Ds_AuthorisationCode'] . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+          if ($decodecResponse->Ds_Response == self::REDSYS_RESPONSE_CODE_ACCEPTED) {
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $decodecResponse->Ds_AuthorisationCode . "', contribution_status_id=1 where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
             CRM_Core_DAO::executeQuery($query);
           }
           else {
-            $error = self::trimAmount($response['Ds_Response']);
+            $error = self::trimAmount($decodecResponse->Ds_Response);
             if(array_key_exists($error, $errors)) {
               $error = $errors[$error];
             }
-            $cancel_date = CRM_Utils_Date::currentDBDate();
-
-            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            $cancel_date = CRM_Utils_Date::currentDBDate();            
+            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";            
             CRM_Core_DAO::executeQuery($query);
           }
           break;
@@ -300,26 +286,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
           require_once 'CRM/Core/Error.php';
           CRM_Core_Error::debug_log_message("Could not get module name from request url");
       }
-    }     
-    // $response['Ds_Date']              = self::retrieve('Ds_Date', 'String', 'POST', false);
-    // $response['Ds_Hour']              = self::retrieve('Ds_Hour', 'String', 'POST', false);
-    // $response['Ds_SecurePayment']     = self::retrieve('Ds_SecurePayment', 'String', 'POST', false);
-    // $response['Ds_Card_Country']      = self::retrieve('Ds_Card_Country', 'Integer', 'POST', false);
-    // $response['Ds_Amount']            = self::retrieve('Ds_Amount', 'Integer', 'POST', true);
-    // $response['Ds_Currency']          = self::retrieve('Ds_Currency', 'Integer', 'POST', true);
-    // $response['Ds_Order']             = self::retrieve('Ds_Order', 'String', 'POST', true);
-    // $response['Ds_MerchantCode']      = self::retrieve('Ds_MerchantCode', 'String', 'POST', true);
-    // $response['Ds_Terminal']          = self::retrieve('Ds_Terminal', 'String', 'POST', false);
-    // $response['Ds_Signature']         = self::retrieve('Ds_Signature', 'String', 'POST', true);
-    // $response['Ds_Response']          = self::retrieve('Ds_Response', 'String', 'POST', true);
-    // $response['Ds_MerchantData']      = self::retrieve('Ds_MerchantData', 'String', 'POST', false);
-    // $response['Ds_TransactionType']   = self::retrieve('Ds_TransactionType', 'String', 'POST', false);
-    // $response['Ds_ConsumerLanguage']  = self::retrieve('Ds_ConsumerLanguage', 'String', 'POST', false);
-    // $response['Ds_AuthorisationCode'] = self::retrieve('Ds_AuthorisationCode', 'String', 'POST', true);
-
-
-    
-      
+    }               
     
   }
 
