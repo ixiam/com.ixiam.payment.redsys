@@ -5,6 +5,11 @@ This is a Payment Processor for CiviCRM that allows you to work with Redsys from
 For more information about CiviCRM payment processors, see:
 http://book.civicrm.org/user/current/contributions/payment-processors/
 
+### Update on 23/11/2015 ###
+
+Latest version 1.2 has been updated to meet the new Redsys requirements regarding password sha256 encryption.
+More information here: https://canales.redsys.es/canales/ayuda/migracionSHA256.html
+
 ## Contact ##
 
 The project has been managed by Amnesty International Spain (https://www.es.amnesty.org) in collaboration with iXiam Global Solutions (http://www.ixiam.com).
@@ -45,7 +50,7 @@ https://issues.civicrm.org/jira/browse/CRM-14396
 
 ## License ##
 
-Redsys Payment Processor for CiviCRM. Copyright (C) 2013 Amnesty International (originally developed by Ixiam http://www.ixiam.com).
+Redsys Payment Processor for CiviCRM. Copyright (C) 2013 - 2015 Amnesty International (originally developed by Ixiam http://www.ixiam.com).
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
