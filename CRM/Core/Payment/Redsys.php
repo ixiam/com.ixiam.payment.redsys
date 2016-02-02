@@ -148,20 +148,20 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $miObj->setParameter("DS_MERCHANT_TERMINAL",1);
     $miObj->setParameter("DS_MERCHANT_MERCHANTURL",$merchantUrl);
     $miObj->setParameter("DS_MERCHANT_URLOK",$returnURL);
-    $miObj->setParameter("DS_MERCHANT_URLKO",$cancelURL);    
+    $miObj->setParameter("DS_MERCHANT_URLKO",$cancelURL);
 
     $miObj->setParameter("DS_MERCHANT_PRODUCTDESCRIPTION",$params["contributionType_name"]);
     $miObj->setParameter("DS_MERCHANT_TITULAR",$params["first_name"] . " " . $params["last_name"]   );
     $miObj->setParameter("DS_MERCHANT_CONSUMERLANGUAGE",self::REDSYS_LANGUAGE_SPANISH);
-    
+
     $version="HMAC_SHA256_V1";
-    
-    $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);    
+
+    $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);
 
     // Print the tpl to redirect and send POST variables to RedSys Getaway
     $template = CRM_Core_Smarty::singleton();
     $tpl = 'CRM/Core/Payment/Redsys.tpl';
-    
+
     $template->assign('signature', $signature);
     $redsysParamsJSON = $miObj->createMerchantParameters();
     $template->assign('redsysParamsJSON', $redsysParamsJSON);
@@ -243,11 +243,11 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $response["parameters"] = $_POST["Ds_MerchantParameters"];
     $response["signature"] = $_POST["Ds_Signature"];
 
-    $decodecResponseJson = $miObj->decodeMerchantParameters($response["parameters"]);      
+    $decodecResponseJson = $miObj->decodeMerchantParameters($response["parameters"]);
     $decodecResponse = json_decode($decodecResponseJson);
-    
-    $firma = $miObj->createMerchantSignatureNotif($this->_paymentProcessor["password"],$response["parameters"]);  
-    
+
+    $signatureNotif = $miObj->createMerchantSignatureNotif($this->_paymentProcessor["password"],$response["parameters"]);
+
 
     // Validations
     if($decodecResponse->Ds_MerchantCode != $this->_paymentProcessor["user_name"]){
@@ -262,13 +262,13 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
       echo "Failure: Could not find contribution record for {$contribution->id}<p>";
       return FALSE;
     }
-    
 
-    if ($firma === $response["signature"]) {   
+
+    if ($signatureNotif === $response["signature"]) {
       switch ($module) {
-        case 'contribute':          
-          if ($decodecResponse->Ds_Response == self::REDSYS_RESPONSE_CODE_ACCEPTED) {           
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $decodecResponse->Ds_AuthorisationCode . "', contribution_status_id=1 where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";            
+        case 'contribute':
+          if ($decodecResponse->Ds_Response == self::REDSYS_RESPONSE_CODE_ACCEPTED) {
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $decodecResponse->Ds_AuthorisationCode . "', contribution_status_id=1 where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
             CRM_Core_DAO::executeQuery($query);
           }
           else {
@@ -278,7 +278,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
             }
             $cancel_date = CRM_Utils_Date::currentDBDate();
 
-            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";            
+            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
             CRM_Core_DAO::executeQuery($query);
           }
           break;
@@ -292,8 +292,8 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
             if(array_key_exists($error, $errors)) {
               $error = $errors[$error];
             }
-            $cancel_date = CRM_Utils_Date::currentDBDate();            
-            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";            
+            $cancel_date = CRM_Utils_Date::currentDBDate();
+            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
             CRM_Core_DAO::executeQuery($query);
           }
           break;
@@ -302,8 +302,8 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
           require_once 'CRM/Core/Error.php';
           CRM_Core_Error::debug_log_message("Could not get module name from request url");
       }
-    }               
-    
+    }
+
   }
 
   static function formatAmount($amount, $size, $pad = 0){
