@@ -140,21 +140,20 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $merchantUrl = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
 
     $miObj = new RedsysAPI;
-    $miObj->setParameter("DS_MERCHANT_AMOUNT",$params["amount"] * 100);
-    $miObj->setParameter("DS_MERCHANT_ORDER",strval(self::formatAmount($params["contributionID"], 12)));
-    $miObj->setParameter("DS_MERCHANT_MERCHANTCODE",$this->_paymentProcessor["user_name"]);
-    $miObj->setParameter("DS_MERCHANT_CURRENCY",self::REDSYS_CURRENCY_EURO);
-    $miObj->setParameter("DS_MERCHANT_TRANSACTIONTYPE",self::REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD);
-    $miObj->setParameter("DS_MERCHANT_TERMINAL",1);
-    $miObj->setParameter("DS_MERCHANT_MERCHANTURL",$merchantUrl);
-    $miObj->setParameter("DS_MERCHANT_URLOK",$returnURL);
-    $miObj->setParameter("DS_MERCHANT_URLKO",$cancelURL);
+    $miObj->setParameter("Ds_Merchant_Amount", $params["amount"] * 100);
+    $miObj->setParameter("Ds_Merchant_Order", strval(self::formatAmount($params["contributionID"], 12)));
+    $miObj->setParameter("Ds_Merchant_MerchantCode", $this->_paymentProcessor["user_name"]);
+    $miObj->setParameter("Ds_Merchant_Currency", self::REDSYS_CURRENCY_EURO);
+    $miObj->setParameter("Ds_Merchant_TransactionType", self::REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD);
+    $miObj->setParameter("Ds_Merchant_Terminal", 1);
+    $miObj->setParameter("Ds_Merchant_MerchantURL", $merchantUrl);
+    $miObj->setParameter("Ds_Merchant_UrlOK", $returnURL);
+    $miObj->setParameter("Ds_Merchant_UrlKO", $cancelURL);
+    $miObj->setParameter("Ds_Merchant_ProductDescription", $params["contributionType_name"]);
+    $miObj->setParameter("Ds_Merchant_Titular", $params["first_name"] . " " . $params["last_name"]   );
+    $miObj->setParameter("Ds_Merchant_ConsumerLanguage", self::REDSYS_LANGUAGE_SPANISH);
 
-    $miObj->setParameter("DS_MERCHANT_PRODUCTDESCRIPTION",$params["contributionType_name"]);
-    $miObj->setParameter("DS_MERCHANT_TITULAR",$params["first_name"] . " " . $params["last_name"]   );
-    $miObj->setParameter("DS_MERCHANT_CONSUMERLANGUAGE",self::REDSYS_LANGUAGE_SPANISH);
-
-    $version="HMAC_SHA256_V1";
+    $version = "HMAC_SHA256_V1";
 
     $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);
 
