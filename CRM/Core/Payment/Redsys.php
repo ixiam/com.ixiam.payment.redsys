@@ -153,6 +153,34 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $miObj->setParameter("Ds_Merchant_Titular", $params["first_name"] . " " . $params["last_name"]   );
     $miObj->setParameter("Ds_Merchant_ConsumerLanguage", self::REDSYS_LANGUAGE_SPANISH);
 
+    $merchantData = array(
+      'contactID' => $params['contactID'],
+    );
+    if ($component == 'event') {
+      $merchantData['eventID']        = $params['eventID'];
+      $merchantData['participantID']  = $params['participantID'];
+    }
+    else {
+      $membershipID = CRM_Utils_Array::value('membershipID', $params);
+      if ($membershipID) {
+        $merchantData['membershipID'] = $membershipID;
+      }
+      $contributionPageID = CRM_Utils_Array::value('contributionPageID', $params);
+      if ($contributionPageID) {
+        $merchantData['contributionPageID'] = $contributionPageID;
+      }
+      $relatedContactID = CRM_Utils_Array::value('related_contact', $params);
+      if ($relatedContactID) {
+        $merchantData['relatedContactID'] = $relatedContactID;
+
+        $onBehalfDupeAlert = CRM_Utils_Array::value('onbehalf_dupe_alert', $params);
+        if ($onBehalfDupeAlert) {
+          $merchantData['onBehalfDupeAlert'] = $onBehalfDupeAlert;
+        }
+      }
+    }
+    $miObj->setParameter("Ds_Merchant_Data", serialize($merchantData));
+
     $version = "HMAC_SHA256_V1";
 
     $signature = $miObj->createMerchantSignature($this->_paymentProcessor["password"]);
