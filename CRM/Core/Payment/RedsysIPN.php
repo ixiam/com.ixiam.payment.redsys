@@ -94,7 +94,6 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
       'contributionPageID' => self::retrieve('contributionPageID', 'String', 'GET', false),
       'relatedContactID'   => self::retrieve('relatedContactID', 'String', 'GET', false),
       'onBehalfDupeAlert'  => self::retrieve('onBehalfDupeAlert', 'String', 'GET', false),
-      'is_test'            => 0, // ToDo!!
       // POST Parameters
       'Ds_SignatureVersion'   => self::retrieve('Ds_SignatureVersion', 'String', 'POST', true),
       'Ds_MerchantParameters' => self::retrieve('Ds_MerchantParameters', 'String', 'POST', true),
