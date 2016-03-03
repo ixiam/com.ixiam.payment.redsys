@@ -16,7 +16,6 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
   CONST REDSYS_LANGUAGE_CATALAN = 3;
   CONST REDSYS_LANGUAGE_GALICIAN = 12;
   CONST REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD = 0;
-  CONST REDSYS_RESPONSE_CODE_ACCEPTED = '0000';
 
   /**
   * We only need one instance of this object. So we use the singleton
@@ -50,9 +49,9 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
   * @return void
   */
   function __construct($mode, &$paymentProcessor) {
-    $this->_mode = $mode;
-    $this->_paymentProcessor = $paymentProcessor;
-    $this->_processorName = ts( "Redsys" );
+    $this->_mode              = $mode;
+    $this->_paymentProcessor  = $paymentProcessor;
+    $this->_processorName     = 'Redsys';
   }
 
   /**
@@ -137,7 +136,30 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
       TRUE, NULL, FALSE
     );
 
-    $merchantUrl = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+    $merchantUrlParams = "contactID={$params['contactID']}&contributionID={$params['contributionID']}";
+    if ($component == 'event') {
+      $merchantUrlParams .= "&eventID={$params['eventID']}&participantID={$params['participantID']}";
+    }
+    else {
+      $membershipID = CRM_Utils_Array::value('membershipID', $params);
+      if ($membershipID) {
+        $merchantUrlParams .= "&membershipID=$membershipID";
+      }
+      $contributionPageID = CRM_Utils_Array::value('contributionPageID', $params);
+      if ($contributionPageID) {
+        $merchantUrlParams .= "&contributionPageID=$contributionPageID";
+      }
+      $relatedContactID = CRM_Utils_Array::value('related_contact', $params);
+      if ($relatedContactID) {
+        $merchantUrlParams .= "&relatedContactID=$relatedContactID";
+
+        $onBehalfDupeAlert = CRM_Utils_Array::value('onbehalf_dupe_alert', $params);
+        if ($onBehalfDupeAlert) {
+          $merchantUrlParams .= "&onBehalfDupeAlert=$onBehalfDupeAlert";
+        }
+      }
+    }
+    $merchantUrl = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"] . '&' . $merchantUrlParams;
 
     $miObj = new RedsysAPI;
     $miObj->setParameter("Ds_Merchant_Amount", $params["amount"] * 100);
@@ -152,34 +174,6 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $miObj->setParameter("Ds_Merchant_ProductDescription", $params["contributionType_name"]);
     $miObj->setParameter("Ds_Merchant_Titular", $params["first_name"] . " " . $params["last_name"]   );
     $miObj->setParameter("Ds_Merchant_ConsumerLanguage", self::REDSYS_LANGUAGE_SPANISH);
-
-    $merchantData = array(
-      'contactID' => $params['contactID'],
-    );
-    if ($component == 'event') {
-      $merchantData['eventID']        = $params['eventID'];
-      $merchantData['participantID']  = $params['participantID'];
-    }
-    else {
-      $membershipID = CRM_Utils_Array::value('membershipID', $params);
-      if ($membershipID) {
-        $merchantData['membershipID'] = $membershipID;
-      }
-      $contributionPageID = CRM_Utils_Array::value('contributionPageID', $params);
-      if ($contributionPageID) {
-        $merchantData['contributionPageID'] = $contributionPageID;
-      }
-      $relatedContactID = CRM_Utils_Array::value('related_contact', $params);
-      if ($relatedContactID) {
-        $merchantData['relatedContactID'] = $relatedContactID;
-
-        $onBehalfDupeAlert = CRM_Utils_Array::value('onbehalf_dupe_alert', $params);
-        if ($onBehalfDupeAlert) {
-          $merchantData['onBehalfDupeAlert'] = $onBehalfDupeAlert;
-        }
-      }
-    }
-    $miObj->setParameter("Ds_Merchant_Data", serialize($merchantData));
 
     $version = "HMAC_SHA256_V1";
 
@@ -200,137 +194,21 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     CRM_Utils_System::civiExit();
   }
 
-
-  protected function isValidResponse($params){
-    // MerchantCode is valid
-    $signature = strtoupper(sha1( $params["Ds_Merchant_Amount"] .
-        $params["Ds_Amount"] .
-        $params["Ds_Order"] .
-        $params["Ds_MerchantCode"] .
-        $params["Ds_Currency"] .
-        $params["Ds_Response"] .
-        $this->_paymentProcessor["password"] )
-    );
-
-    // SHA Signature is valid
-    if($params['Ds_Signature'] != $signature){
-      CRM_Core_Error::debug_log_message("Redsys Response param Ds_Signature incorrect");
-      return false;
-    }
-
-
-
-    return true;
-  }
-
   public function handlePaymentNotification() {
-    $errors = array(
-      "101"  => "Tarjeta caducada",
-      "102"  => "Tarjeta en excepción transitoria o bajo sospecha de fraude",
-      "106"  => "Intentos de PIN excedidos",
-      "125"  => "Tarjeta no efectiva",
-      "129"  => "Código de seguridad (CVV2/CVC2) incorrecto",
-      "180"  => "Tarjeta ajena al servicio",
-      "184"  => "Error en la autenticación del titular",
-      "190"  => "Denegación del emisor sin especificar motivo",
-      "191"  => "Fecha de caducidad errónea",
-      "202"  => "Tarjeta en excepción transitoria o bajo sospecha de fraude con retirada de tarjeta",
-      "904"  => "Comercio no registrado en FUC",
-      "909"  => "Error de sistema",
-      "913"  => "Pedido repetido",
-      "944"  => "Sesión Incorrecta",
-      "950"  => "Operación de devolución no permitida",
-      "912"  => "Emisor no disponible",
-      "9912" => "Emisor no disponible",
-      "9064" => "Número de posiciones de la tarjeta incorrecto",
-      "9078" => "Tipo de operación no permitida para esa tarjeta",
-      "9093" => "Tarjeta no existente",
-      "9094" => "Rechazo servidores internacionales",
-      "9104" => "Comercio con “titular seguro” y titular sin clave de compra segura",
-      "9218" => "El comercio no permite op. seguras por entrada /operaciones",
-      "9253" => "Tarjeta no cumple el check-digit",
-      "9256" => "El comercio no puede realizar preautorizaciones",
-      "9257" => "Esta tarjeta no permite operativa de preautorizaciones",
-      "9261" => "Operación detenida por superar el control de restricciones en la entrada al SIS",
-      "9915" => "A petición del usuario se ha cancelado el pago",
-      "9929" => "Anulación de autorización en diferido realizada por el comercio",
-      "9997" => "Se está procesando otra transacción en SIS con la misma tarjeta",
-      "9998" => "Operación en proceso de solicitud de datos de tarjeta",
-      "9999" => "Operación que ha sido redirigida al emisor a autenticar",
-    );
+    $input = $ids = $objects = array();
+    $ipn = new CRM_Core_Payment_RedsysIPN();
 
-    $module = self::retrieve('md', 'String', 'GET', false);
-    $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
+    // load vars in $input, &ids
+    $ipn->getInput($input, $ids);
+    CRM_Core_Error::debug_log_message("Redsys IPN Response: Parameteres received \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) );
 
-
-    $miObj = new RedsysAPI;
-
-    $response = array();
-    $response["version"] = $_POST["Ds_SignatureVersion"];
-    $response["parameters"] = $_POST["Ds_MerchantParameters"];
-    $response["signature"] = $_POST["Ds_Signature"];
-
-    $decodecResponseJson = $miObj->decodeMerchantParameters($response["parameters"]);
-    $decodecResponse = json_decode($decodecResponseJson);
-
-    $signatureNotif = $miObj->createMerchantSignatureNotif($this->_paymentProcessor["password"],$response["parameters"]);
-
-
-    // Validations
-    if($decodecResponse->Ds_MerchantCode != $this->_paymentProcessor["user_name"]){
-      CRM_Core_Error::debug_log_message("Redsys Response param Ds_MerchantCode incorrect");
-      return false;
-    }
-    // Contribution exists and is valid
-    $contribution = new CRM_Contribute_BAO_Contribution();
-    $contribution->id = self::trimAmount($decodecResponse->Ds_Order);
-    if (!$contribution->find(TRUE)) {
-      CRM_Core_Error::debug_log_message("Could not find contribution record: {$contribution->id} in IPN request: ".print_r($params, TRUE));
-      echo "Failure: Could not find contribution record for {$contribution->id}<p>";
+    $paymentProcessorID = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_PaymentProcessorType', $this->_processorName, 'id', 'name');
+    if (!$ipn->validateData($this->_paymentProcessor, $input, $ids, $objects, TRUE, $paymentProcessorID)) {
+      CRM_Core_Error::debug_log_message("Redsys Validation failed");
       return FALSE;
     }
 
-
-    if ($signatureNotif === $response["signature"]) {
-      switch ($module) {
-        case 'contribute':
-          if ($decodecResponse->Ds_Response == self::REDSYS_RESPONSE_CODE_ACCEPTED) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $decodecResponse->Ds_AuthorisationCode . "', contribution_status_id=1 where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
-            CRM_Core_DAO::executeQuery($query);
-          }
-          else {
-            $error = self::trimAmount($decodecResponse->Ds_Response);
-            if(array_key_exists($error, $errors)) {
-              $error = $errors[$error];
-            }
-            $cancel_date = CRM_Utils_Date::currentDBDate();
-
-            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
-            CRM_Core_DAO::executeQuery($query);
-          }
-          break;
-        case 'event':
-          if ($decodecResponse->Ds_Response == self::REDSYS_RESPONSE_CODE_ACCEPTED) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $decodecResponse->Ds_AuthorisationCode . "', contribution_status_id=1 where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
-            CRM_Core_DAO::executeQuery($query);
-          }
-          else {
-            $error = self::trimAmount($decodecResponse->Ds_Response);
-            if(array_key_exists($error, $errors)) {
-              $error = $errors[$error];
-            }
-            $cancel_date = CRM_Utils_Date::currentDBDate();
-            $query = "UPDATE civicrm_contribution SET contribution_status_id=3, cancel_reason = '" . $error . "' , cancel_date = '" . $cancel_date . "' where id='" . self::trimAmount($decodecResponse->Ds_Order) . "'";
-            CRM_Core_DAO::executeQuery($query);
-          }
-          break;
-
-        default:
-          require_once 'CRM/Core/Error.php';
-          CRM_Core_Error::debug_log_message("Could not get module name from request url");
-      }
-    }
-
+    return $ipn->single($input, $ids, $objects, FALSE, FALSE);
   }
 
   static function formatAmount($amount, $size, $pad = 0){
@@ -341,16 +219,5 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
 
   static function trimAmount($amount, $pad = '0'){
     return ltrim(trim($amount), $pad);
-  }
-
-  static function retrieve($name, $type, $location = 'POST', $abort = true) {
-    static $store = null;
-    $value = CRM_Utils_Request::retrieve($name, $type, $store, false, null, $location);
-    if ($abort && $value === null) {
-      CRM_Core_Error::debug_log_message("Could not find an entry for $name in $location");
-      echo "Failure: Missing Parameter<p>";
-      exit();
-    }
-    return $value;
   }
 }
