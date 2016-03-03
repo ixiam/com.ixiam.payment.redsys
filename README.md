@@ -5,18 +5,35 @@ This is a Payment Processor for CiviCRM that allows you to work with Redsys from
 For more information about CiviCRM payment processors, see:
 http://book.civicrm.org/user/current/contributions/payment-processors/
 
-### Update on 23/11/2015 ###
+## Release Notes ##
 
-Latest version 1.2 has been updated to meet the new Redsys requirements regarding password sha256 encryption.
+### v1.3 ###
+
+- Send email receipt on Contribution completion if it is set up
+- For Event Registration pages, change Participant's status on Contribution completion
+
+### v1.2.1 ###
+
+Version 1.2 has been updated to meet the new Redsys requirements regarding password sha256 encryption.
 More information here: https://canales.redsys.es/canales/ayuda/migracionSHA256.html
 
 ## Contact ##
 
-The project has been managed by Amnesty International Spain (https://www.es.amnesty.org) in collaboration with iXiam Global Solutions (http://www.ixiam.com).
+* iXiam Global Solutions: <info@ixiam.com>
 
-* Carlos Capote (project manager): <ccapote@es.amnesty.org>
-* Luciano Spiegel (developer): <l.spiegel@ixiam.com>
-* Rubén Pineda (developer): <r.pineda@ixiam.com>
+## Sponsorship ##
+
+This extension was funded by:
+
+* iXiam Global Solutions - <http://www.ixiam.com>
+* Amnesty International Spain - <https://www.es.amnesty.org>
+* Fundación Niños con Amor - <ninosconamor@hotmail.com>
+* Universidad Carlos III de Madrid - <http://www.uc3m.es>
+
+Collaborators
+
+* Carlos Capote: <carlos@librecool.es >
+
 
 ## How to install ##
 
