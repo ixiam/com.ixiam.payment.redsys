@@ -117,24 +117,29 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
       CRM_Core_Error::fatal(ts('Component is invalid'));
     }
 
-    $url       = ($component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
-    $cancel    = ($component == 'event') ? '_qf_Register_display' : '_qf_Main_display';
-    $returnURL = CRM_Utils_System::url($url,
-      "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
-      TRUE, NULL, FALSE
-    );
+    if( array_key_exists( 'webform_redirect_success', $params ) ) {
+      $returnURL = $params['webform_redirect_success'];
+      $cancelURL = $params['webform_redirect_cancel'];
+    } else {
+      $url       = ($component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
+      $cancel    = ($component == 'event') ? '_qf_Register_display' : '_qf_Main_display';
+      $returnURL = CRM_Utils_System::url($url,
+        "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
+        TRUE, NULL, FALSE
+      );
 
 
-    $cancelUrlString = "$cancel=1&cancel=1&qfKey={$params['qfKey']}";
-    if (CRM_Utils_Array::value('is_recur', $params)) {
-      $cancelUrlString .= "&isRecur=1&recurId={$params['contributionRecurID']}&contribId={$params['contributionID']}";
+      $cancelUrlString = "$cancel=1&cancel=1&qfKey={$params['qfKey']}";
+      if (CRM_Utils_Array::value('is_recur', $params)) {
+        $cancelUrlString .= "&isRecur=1&recurId={$params['contributionRecurID']}&contribId={$params['contributionID']}";
+      }
+
+      $cancelURL = CRM_Utils_System::url(
+        $url,
+        $cancelUrlString,
+        TRUE, NULL, FALSE
+      );
     }
-
-    $cancelURL = CRM_Utils_System::url(
-      $url,
-      $cancelUrlString,
-      TRUE, NULL, FALSE
-    );
 
     $merchantUrlParams = "contactID={$params['contactID']}&contributionID={$params['contributionID']}";
     if ($component == 'event') {
