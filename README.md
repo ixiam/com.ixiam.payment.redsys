@@ -7,6 +7,10 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Release Notes ##
 
+### v1.4 ###
+
+- When is used in webforms, returns to thankyou page defined or back to the webform if the contribution is canceled in Redsys UI
+
 ### v1.3 ###
 
 - Send email receipt on Contribution completion if it is set up
