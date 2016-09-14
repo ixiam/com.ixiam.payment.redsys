@@ -166,6 +166,11 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     }
     $merchantUrl = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Redsys&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"] . '&' . $merchantUrlParams;
 
+    // Force http if set
+    $redsys_settings = CRM_Core_BAO_Setting::getItem("Redsys Settings", 'redsys_settings');
+    if($redsys_settings['ipn_http'] == '1')
+      $merchantUrl = preg_replace('/^https:/i', 'http:', $merchantUrl);
+
     $miObj = new RedsysAPI;
     $miObj->setParameter("Ds_Merchant_Amount", $params["amount"] * 100);
     $miObj->setParameter("Ds_Merchant_Order", strval(self::formatAmount($params["contributionID"], 12)));
