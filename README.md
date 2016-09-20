@@ -7,6 +7,10 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Release Notes ##
 
+### v1.5 ###
+
+- New Settings to force http urls in ipn callback, if Redsys doesn't support the SSL certificate installed in the website
+
 ### v1.4 ###
 
 - When is used in webforms, returns to thankyou page defined or back to the webform if the contribution is canceled in Redsys UI
