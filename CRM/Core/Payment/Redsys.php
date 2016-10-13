@@ -170,6 +170,8 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $redsys_settings = CRM_Core_BAO_Setting::getItem("Redsys Settings", 'redsys_settings');
     if($redsys_settings['ipn_http'] == '1')
       $merchantUrl = preg_replace('/^https:/i', 'http:', $merchantUrl);
+    
+    $merchantTerminal = empty($redsys_settings['merchant_terminal']) ? 1 : $redsys_settings['merchant_terminal'];
 
     $miObj = new RedsysAPI;
     $miObj->setParameter("Ds_Merchant_Amount", $params["amount"] * 100);
@@ -177,7 +179,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $miObj->setParameter("Ds_Merchant_MerchantCode", $this->_paymentProcessor["user_name"]);
     $miObj->setParameter("Ds_Merchant_Currency", self::REDSYS_CURRENCY_EURO);
     $miObj->setParameter("Ds_Merchant_TransactionType", self::REDSYS_TRANSACTION_TYPE_OPERATION_STANDARD);
-    $miObj->setParameter("Ds_Merchant_Terminal", 1);
+    $miObj->setParameter("Ds_Merchant_Terminal", $merchantTerminal);
     $miObj->setParameter("Ds_Merchant_MerchantURL", $merchantUrl);
     $miObj->setParameter("Ds_Merchant_UrlOK", $returnURL);
     $miObj->setParameter("Ds_Merchant_UrlKO", $cancelURL);
