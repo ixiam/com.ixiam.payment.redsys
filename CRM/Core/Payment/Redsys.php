@@ -30,16 +30,15 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
   * mode of operation: live or test
   *
   * @var object
-  * @static
   */
-  static protected $_mode = null;
+  protected $_mode = null;
 
   /**
    * Payment Type Processor Name
    *
    * @var string
    */
-  static protected $_processorName = null;
+  protected $_processorName = null;
 
   /**
   * Constructor
@@ -170,7 +169,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $redsys_settings = CRM_Core_BAO_Setting::getItem("Redsys Settings", 'redsys_settings');
     if($redsys_settings['ipn_http'] == '1')
       $merchantUrl = preg_replace('/^https:/i', 'http:', $merchantUrl);
-    
+
     $merchantTerminal = empty($redsys_settings['merchant_terminal']) ? 1 : $redsys_settings['merchant_terminal'];
 
     $miObj = new RedsysAPI;
