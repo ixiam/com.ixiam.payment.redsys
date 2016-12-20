@@ -7,6 +7,10 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Release Notes ##
 
+### v1.7 ###
+
+- Multiterminal settings support
+
 ### v1.6 ###
 
 - More settings to customize Merchant Terminal number if it is not "1"
@@ -44,7 +48,7 @@ This extension was funded by:
 
 Collaborators
 
-* Carlos Capote: <carlos@librecool.es >
+* Carlos Capote: <https://github.com/elcapo>
 
 
 ## How to install ##
