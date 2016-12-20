@@ -17,9 +17,29 @@
       <td>
         {$form.merchant_terminal.html}
         <br>
-        <span class="description">Merchant terminal number ("1" if not defined)</span>
+        <span class="description">Default merchant terminal number ("1" if not defined)</span>
       </td>
     </tr>
+
+    {foreach key=property item=terminal from=$form name=terminals}
+      {if $smarty.foreach.terminals.first}
+        <tr>
+          <th colspan="2">Merchant terminal numbers for specific payment prcessors</th>
+        </tr>
+      {/if}
+
+      {if $property|strpos:'merchant_terminal_' === 0}
+        <tr class="crm-redsys-form-block-merchant_terminal">
+          <td width="20%">
+            {$terminal.label}
+          </td>
+          <td>
+            {$terminal.html}
+          </td>
+        </tr>
+      {/if}
+    {/foreach}
+
   </table>
   <div class="crm-submit-buttons">
     {include file="CRM/common/formButtons.tpl" location="bottom"}

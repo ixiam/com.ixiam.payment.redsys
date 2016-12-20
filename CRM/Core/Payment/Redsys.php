@@ -170,7 +170,19 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     if($redsys_settings['ipn_http'] == '1')
       $merchantUrl = preg_replace('/^https:/i', 'http:', $merchantUrl);
 
-    $merchantTerminal = empty($redsys_settings['merchant_terminal']) ? 1 : $redsys_settings['merchant_terminal'];
+    // Get the terminal for this payment processor
+    $paymentProcessorId = $params['payment_processor'];
+    if( array_key_exists('merchant_terminal_' . $paymentProcessorId, $redsys_settings) ) {
+      if( $redsys_settings['merchant_terminal_' . $paymentProcessorId] ) {
+        $merchantTerminal = $redsys_settings['merchant_terminal_' . $paymentProcessorId];
+      }
+    }
+    
+    // Use the default terminal if the processor doesn't have an assigned one
+    if( ! $merchantTerminal ) {
+      $merchantTerminal = empty($redsys_settings['merchant_terminal']) ? 1 :
+        $redsys_settings['merchant_terminal'];
+    }
 
     $miObj = new RedsysAPI;
     $miObj->setParameter("Ds_Merchant_Amount", $params["amount"] * 100);
