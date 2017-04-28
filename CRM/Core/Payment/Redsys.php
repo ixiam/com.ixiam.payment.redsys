@@ -231,7 +231,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $ipn->getInput($input, $ids);
     CRM_Core_Error::debug_log_message("Redsys IPN Response: Parameteres received \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) );
 
-    $paymentProcessorID = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_PaymentProcessorType', $this->_processorName, 'id', 'name');
+    $paymentProcessorID = $this->_paymentProcessor['id'];
     if (!$ipn->validateData($this->_paymentProcessor, $input, $ids, $objects, TRUE, $paymentProcessorID)) {
       CRM_Core_Error::debug_log_message("Redsys Validation failed");
       return FALSE;
