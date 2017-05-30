@@ -7,6 +7,11 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Release Notes ##
 
+### v1.8 ###
+
+- Support for CiviCRM 4.7
+- Support for Wordpress
+
 ### v1.7 ###
 
 - Multiterminal settings support
