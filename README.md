@@ -73,7 +73,8 @@ After installing and activating the extension, you'll need to configure your pay
 
 * Add a new Payment Processor (Administer / System Settings / Payment Processor)
 * Select Redsys Payment Processor as Payment Processor Type
-* Configure it with your Mechant Account Id (número de comercio) and Encription Password (clave secreta de encriptación)
+* Configure it with your Mechant Account Id (número de comercio) and Encription Password (clave secreta de encriptación), 
+ * By default the test key is sq7HjrUOBfKmC576ILgskD5srU870gJ7
 
 ### Requirements ###
 
