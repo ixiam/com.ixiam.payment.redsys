@@ -54,7 +54,7 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
     $contribution = &$objects['contribution'];
 
     if (!$recur) {
-      if ($contribution->total_amount != $input['amount']) {
+      if (str_replace(",", "", $contribution->total_amount) != str_replace(",", "", $input['amount']) ) {
         CRM_Core_Error::debug_log_message("Amount values dont match between database and IPN request");
         echo "Failure: Amount values dont match between database and IPN request<p>";
         return FALSE;
