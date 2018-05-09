@@ -6,6 +6,9 @@ For more information about CiviCRM payment processors, see:
 http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Release Notes ##
+### v1.9 ###
+
+- Fix issue https://github.com/ixiam/com.ixiam.payment.redsys/issues/26
 
 ### v1.8 ###
 
