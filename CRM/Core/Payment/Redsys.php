@@ -34,11 +34,15 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
   protected $_mode = null;
 
   /**
-   * Payment Type Processor Name
+   * Processor type label.
+   *
+   * (Deprecated parameter but used in some messages).
+   *
+   * @deprecated
    *
    * @var string
    */
-  protected $_processorName = null;
+  public $_processorName = null;
 
   /**
   * Constructor
