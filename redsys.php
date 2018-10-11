@@ -37,7 +37,6 @@ function redsys_civicrm_postInstall() {
  */
 function redsys_civicrm_install() {
   $params = array(
-    'version' => 3,
     'name' => 'Redsys',
     'title' => 'Redsys Payment Processor',
     'description' => 'Works with Servired (Sermepa) and 4B (Pasat).',
@@ -50,7 +49,7 @@ function redsys_civicrm_install() {
     'is_recur' => 0,
     'payment_type' => 1,
   );
-  $result = civicrm_api('PaymentProcessorType', 'create', $params);
+  $result = civicrm_api3('PaymentProcessorType', 'create', $params);
   return _redsys_civix_civicrm_install();
 }
 
@@ -61,18 +60,16 @@ function redsys_civicrm_install() {
  */
 function redsys_civicrm_uninstall() {
   $params = array(
-    'version' => 3,
     'sequential' => 1,
     'name' => 'Redsys',
   );
   $result = civicrm_api('PaymentProcessorType', 'get', $params);
   if ($result["count"] == 1) {
     $params = array(
-      'version' => 3,
       'sequential' => 1,
       'id' => $result["id"],
     );
-    $result = civicrm_api('PaymentProcessorType', 'delete', $params);
+    $result = civicrm_api3('PaymentProcessorType', 'delete', $params);
   }
   return _redsys_civix_civicrm_uninstall();
 }
