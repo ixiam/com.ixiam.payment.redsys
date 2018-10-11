@@ -9,7 +9,7 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ### v2.0 ###
 
-- Support for CiviCRM 5.0
+- Support for CiviCRM 5.3.0
 
 ### v1.9 ###
 
@@ -85,7 +85,8 @@ After installing and activating the extension, you'll need to configure your pay
 
 ### Requirements ###
 
-Version 2.0 works works with CiviCRM 5.0 or newer versions.
+Version 1.9 works with CiviCRM 4.6 / 4.7 / 5.x (until 5.3.0).
+Version 2.0 works with CiviCRM 5.3.0 or newer versions.
 
 ## License ##
 
