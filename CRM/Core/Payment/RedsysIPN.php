@@ -72,13 +72,14 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
       }
       CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
       try {
-        civicrm_api3('contribution', 'create', array('id' => $this->transaction_id, 'contribution_status_id' => 'Failed', 'cancel_reason' => $input['reasonCode']));
+        civicrm_api3('contribution', 'create', array('id' => $input['contributionID'], 'contribution_status_id' => 'Failed', 'cancel_reason' => $input['reasonCode']));
       }
       catch (CiviCRM_API3_Exception $e) {
         if($e->getMessage()) {
           CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: " . $e->getMessage());
         }
       }
+      return TRUE;
     }
 
     CRM_Core_Error::debug_log_message("Redsys IPN Response: About complete trans \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));

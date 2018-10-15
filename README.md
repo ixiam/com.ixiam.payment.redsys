@@ -88,6 +88,10 @@ After installing and activating the extension, you'll need to configure your pay
 Version 1.9 works with CiviCRM 4.6 / 4.7 / 5.x (until 5.3.0).
 Version 2.0 works with CiviCRM 5.3.0 or newer versions.
 
+### Error Log
+
+To search if is failing in some cases, search in ConfigLog from civicrm the workd "Redsys IPN Error"
+
 ## License ##
 
 Redsys Payment Processor for CiviCRM. Copyright (C) 2013 - 2018 Amnesty International (originally developed by Ixiam http://www.ixiam.com).
