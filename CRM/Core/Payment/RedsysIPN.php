@@ -66,21 +66,31 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
       $error = self::trimAmount($input['Ds_Response']);
       if (array_key_exists($error, $this->_errors)) {
         $input['reasonCode'] = $this->_errors[$error];
+        CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
+        try {
+          civicrm_api3('contribution', 'create', array('id' => $this->transaction_id, 'contribution_status_id' => 'Failed', 'cancel_reason' => $input['reasonCode']));
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          if($e->getMessage()) {
+            CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: " . $e->getMessage());
+          }
+        }
       }
-
-      CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
-      return $this->cancelled($objects, $transaction, $input);
-    }
-    // Check if contribution is already completed, if so we ignore this ipn.
-    if ($contribution->contribution_status_id == 1) {
-      $transaction->commit();
-      CRM_Core_Error::debug_log_message("returning since contribution has already been handled");
-      echo "Success: Contribution has already been handled<p>";
-      return TRUE;
+      else {
+        CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: Not exist the error message");
+      }
     }
 
     CRM_Core_Error::debug_log_message("Redsys IPN Response: About complete trans \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
-    return $this->completeTransaction($input, $ids, $objects, $transaction, $recur);
+    try {
+      civicrm_api3('contribution', 'completetransaction', array('id' => $input['contributionID'], 'trxn_id' => $input["trxn_id"]));
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      if (!stristr($e->getMessage(), 'Contribution already completed')) {
+        CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: " . $e->getMessage());
+      }
+    }
+    return TRUE;
   }
 
   function getInput(&$input, &$ids) {
