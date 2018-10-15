@@ -66,18 +66,18 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
       $error = self::trimAmount($input['Ds_Response']);
       if (array_key_exists($error, $this->_errors)) {
         $input['reasonCode'] = $this->_errors[$error];
-        CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
-        try {
-          civicrm_api3('contribution', 'create', array('id' => $this->transaction_id, 'contribution_status_id' => 'Failed', 'cancel_reason' => $input['reasonCode']));
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          if($e->getMessage()) {
-            CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: " . $e->getMessage());
-          }
-        }
       }
       else {
-        CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: Not exist the error message");
+        $input['reasonCode'] = $error;
+      }
+      CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
+      try {
+        civicrm_api3('contribution', 'create', array('id' => $this->transaction_id, 'contribution_status_id' => 'Failed', 'cancel_reason' => $input['reasonCode']));
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        if($e->getMessage()) {
+          CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: " . $e->getMessage());
+        }
       }
     }
 
