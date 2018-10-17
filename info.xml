@@ -11,11 +11,11 @@
     <author>iXiam Global Solutions</author>
     <email>info@ixiam.com</email>
   </maintainer>
-  <releaseDate>2018-10-11</releaseDate>
+  <releaseDate>2018-10-17</releaseDate>
   <version>2.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>2.0</ver>
+    <ver>5.0</ver>
   </compatibility>
   <comments>RedSys Payment Processor. For more info about RedSys, check its web site: http://www.redsys.es/</comments>
   <civix>
