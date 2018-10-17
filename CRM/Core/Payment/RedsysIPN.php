@@ -54,7 +54,7 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
     $contribution = &$objects['contribution'];
 
     if (!$recur) {
-      if (str_replace(",", "", $contribution->total_amount) != str_replace(",", "", $input['amount']) ) {
+      if (str_replace(",", "", $contribution->total_amount) != str_replace(",", "", $input['amount'])) {
         CRM_Core_Error::debug_log_message("Amount values dont match between database and IPN request");
         echo "Failure: Amount values dont match between database and IPN request<p>";
         return FALSE;
@@ -64,43 +64,54 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
     $transaction = new CRM_Core_Transaction();
     if ($input['Ds_Response'] != self::REDSYS_RESPONSE_CODE_ACCEPTED) {
       $error = self::trimAmount($input['Ds_Response']);
-      if(array_key_exists($error, $this->_errors)) {
+      if (array_key_exists($error, $this->_errors)) {
         $input['reasonCode'] = $this->_errors[$error];
       }
-
-      CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE) );
-      return $this->cancelled($objects, $transaction, $input);
-    }
-    // check if contribution is already completed, if so we ignore this ipn
-    if ($contribution->contribution_status_id == 1) {
-      $transaction->commit();
-      CRM_Core_Error::debug_log_message("returning since contribution has already been handled");
-      echo "Success: Contribution has already been handled<p>";
+      else {
+        $input['reasonCode'] = $error;
+      }
+      CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
+      try {
+        civicrm_api3('contribution', 'create', array('id' => $input['contributionID'], 'contribution_status_id' => 'Cancelled', 'cancel_reason' => $input['reasonCode'], 'cancel_date' => date('Y-m-d')));
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        if($e->getMessage()) {
+          CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: " . $e->getMessage());
+        }
+      }
       return TRUE;
     }
 
-    CRM_Core_Error::debug_log_message("Redsys IPN Response: About complete trans \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE) );
-    return $this->completeTransaction($input, $ids, $objects, $transaction, $recur);
+    CRM_Core_Error::debug_log_message("Redsys IPN Response: About complete trans \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
+    try {
+      civicrm_api3('contribution', 'completetransaction', array('id' => $input['contributionID'], 'trxn_id' => $input["trxn_id"]));
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      if (!stristr($e->getMessage(), 'Contribution already completed')) {
+        CRM_Core_Error::debug_log_message("Redsys IPN Error Updating contribution: " . $e->getMessage());
+      }
+    }
+    return TRUE;
   }
 
   function getInput(&$input, &$ids) {
     $input = array(
-      // GET Parameters
-      'module'             => self::retrieve('md', 'String', 'GET', true),
-      'component'          => self::retrieve('md', 'String', 'GET', true),
-      'qfKey'              => self::retrieve('qfKey', 'String', 'GET', false),
-      'contributionID'     => self::retrieve('contributionID', 'String', 'GET', true),
-      'contactID'          => self::retrieve('contactID', 'String', 'GET', true),
-      'eventID'            => self::retrieve('eventID', 'String', 'GET', false),
-      'participantID'      => self::retrieve('participantID', 'String', 'GET', false),
-      'membershipID'       => self::retrieve('membershipID', 'String', 'GET', false),
-      'contributionPageID' => self::retrieve('contributionPageID', 'String', 'GET', false),
-      'relatedContactID'   => self::retrieve('relatedContactID', 'String', 'GET', false),
-      'onBehalfDupeAlert'  => self::retrieve('onBehalfDupeAlert', 'String', 'GET', false),
-      // POST Parameters
-      'Ds_SignatureVersion'   => self::retrieve('Ds_SignatureVersion', 'String', 'POST', true),
-      'Ds_MerchantParameters' => self::retrieve('Ds_MerchantParameters', 'String', 'POST', true),
-      'Ds_Signature'          => self::retrieve('Ds_Signature', 'String', 'POST', true),
+      // GET Parameters.
+      'module' => self::retrieve('md', 'String', 'GET', TRUE),
+      'component' => self::retrieve('md', 'String', 'GET', TRUE),
+      'qfKey' => self::retrieve('qfKey', 'String', 'GET', FALSE),
+      'contributionID' => self::retrieve('contributionID', 'String', 'GET', TRUE),
+      'contactID' => self::retrieve('contactID', 'String', 'GET', TRUE),
+      'eventID' => self::retrieve('eventID', 'String', 'GET', FALSE),
+      'participantID' => self::retrieve('participantID', 'String', 'GET', FALSE),
+      'membershipID' => self::retrieve('membershipID', 'String', 'GET', FALSE),
+      'contributionPageID' => self::retrieve('contributionPageID', 'String', 'GET', FALSE),
+      'relatedContactID' => self::retrieve('relatedContactID', 'String', 'GET', FALSE),
+      'onBehalfDupeAlert' => self::retrieve('onBehalfDupeAlert', 'String', 'GET', FALSE),
+      // POST Parameters.
+      'Ds_SignatureVersion' => self::retrieve('Ds_SignatureVersion', 'String', 'POST', TRUE),
+      'Ds_MerchantParameters' => self::retrieve('Ds_MerchantParameters', 'String', 'POST', TRUE),
+      'Ds_Signature' => self::retrieve('Ds_Signature', 'String', 'POST', TRUE),
     );
     $decodecResponseJson           = $this->_redsysAPI->decodeMerchantParameters($input["Ds_MerchantParameters"]);
     $decodecResponse               = json_decode($decodecResponseJson);
@@ -129,23 +140,23 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
   function validateData($paymentProcessor, &$input, &$ids, &$objects, $required = TRUE, $paymentProcessorID = NULL) {
     $signatureNotif = $this->_redsysAPI->createMerchantSignatureNotif($paymentProcessor["password"], $input["Ds_MerchantParameters"]);
 
-    if($input['Ds_MerchantCode'] != $paymentProcessor["user_name"]){
+    if ($input['Ds_MerchantCode'] != $paymentProcessor["user_name"]) {
       CRM_Core_Error::debug_log_message("Redsys Response param Ds_MerchantCode incorrect");
-      return false;
+      return FALSE;
     }
 
-    if ($signatureNotif !== $input['Ds_Signature']){
+    if ($signatureNotif !== $input['Ds_Signature']) {
       CRM_Core_Error::debug_log_message("Redsys signature doesn't match");
-      return false;
+      return FALSE;
     }
 
     return parent::validateData($input, $ids, $objects, $required, $paymentProcessorID);
   }
 
-  static function retrieve($name, $type, $location = 'POST', $abort = true) {
-    static $store = null;
-    $value = CRM_Utils_Request::retrieve($name, $type, $store, false, null, $location);
-    if ($abort && $value === null) {
+  static function retrieve($name, $type, $location = 'POST', $abort = TRUE) {
+    static $store = NULL;
+    $value = CRM_Utils_Request::retrieve($name, $type, $store, FALSE, NULL, $location);
+    if ($abort && $value === NULL) {
       CRM_Core_Error::debug_log_message("Could not find an entry for $name in $location");
       echo "Failure: Missing Parameter<p>";
       exit();
@@ -153,7 +164,7 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
     return $value;
   }
 
-  static function trimAmount($amount, $pad = '0'){
+  static function trimAmount($amount, $pad = '0') {
     return ltrim(trim($amount), $pad);
   }
 

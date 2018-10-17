@@ -7,6 +7,14 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Release Notes ##
 
+### v2.0 ###
+
+- Support for CiviCRM 5.3.0
+
+### v1.9 ###
+
+- Fix issue https://github.com/ixiam/com.ixiam.payment.redsys/issues/26
+
 ### v1.8 ###
 
 - Support for CiviCRM 4.7
@@ -54,7 +62,7 @@ This extension was funded by:
 Collaborators
 
 * Carlos Capote: <https://github.com/elcapo>
-
+* francescbassas: <https://github.com/francescbassas>
 
 ## How to install ##
 
@@ -78,18 +86,16 @@ After installing and activating the extension, you'll need to configure your pay
 
 ### Requirements ###
 
-This payment processor works with CiviCRM 4.4 or newer versions.
+Version 1.9 works with CiviCRM 4.6 / 4.7 / 5.x (until 5.3.0).
+Version 2.0 works with CiviCRM 5.3.0 or newer versions.
 
-Prior to CiviCRM 4.4.5, there is a bug that affects Payment Processors. If your using a prior version (< 4.4.5), you must apply the following patch.
+### Error Log
 
-The patch has been included in the file `CRM/Core/Payment.patched.php`. To apply the patch, you just have to rename the file to `CRM/Core/Payment.php`.
-
-For more information about the patch, see:
-https://issues.civicrm.org/jira/browse/CRM-14396
+To search if is failing in some cases, search in ConfigLog from civicrm the workd "Redsys IPN Error"
 
 ## License ##
 
-Redsys Payment Processor for CiviCRM. Copyright (C) 2013 - 2015 Amnesty International (originally developed by Ixiam http://www.ixiam.com).
+Redsys Payment Processor for CiviCRM. Copyright (C) 2013 - 2018 Amnesty International (originally developed by Ixiam http://www.ixiam.com).
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
