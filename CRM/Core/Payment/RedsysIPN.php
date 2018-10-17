@@ -72,7 +72,7 @@ class CRM_Core_Payment_RedsysIPN extends CRM_Core_Payment_BaseIPN {
       }
       CRM_Core_Error::debug_log_message("Redsys IPN Response: About to cancel contr \n input: " . print_r($input, TRUE) . "\n ids: " . print_r($ids, TRUE) . "\n objects: " . print_r($objects, TRUE));
       try {
-        civicrm_api3('contribution', 'create', array('id' => $input['contributionID'], 'contribution_status_id' => 'Failed', 'cancel_reason' => $input['reasonCode']));
+        civicrm_api3('contribution', 'create', array('id' => $input['contributionID'], 'contribution_status_id' => 'Cancelled', 'cancel_reason' => $input['reasonCode'], 'cancel_date' => date('Y-m-d')));
       }
       catch (CiviCRM_API3_Exception $e) {
         if($e->getMessage()) {
