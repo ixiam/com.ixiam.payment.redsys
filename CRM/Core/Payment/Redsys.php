@@ -202,6 +202,28 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
         $redsys_settings['merchant_terminal'];
     }
 
+    // With webforms not works contributionType_name
+    $description = "";
+    if (isset($params["financialType_name"])) {
+      $description = $params["financialType_name"];
+    }
+    elseif (isset($params["contributionType_name"])) {
+      $description = $params["contributionType_name"];
+    }
+    elseif (isset($params["financial_type_id"]) && $params["financial_type_id"] > 0) {
+      try {
+        $financial_type = civicrm_api3('FinancialType', 'getsingle', array(
+          'sequential' => 1,
+          'id' => $params["financial_type_id"],
+        ));
+        $description = $financial_type["name"];
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message("Redsys-missing parameter financial type: " . $error);
+      }
+    }
+
     $miObj = new RedsysAPI();
     $miObj->setParameter("Ds_Merchant_Amount", $params["amount"] * 100);
     $miObj->setParameter("Ds_Merchant_Order", strval(self::formatAmount($params["contributionID"], 12)));
@@ -212,7 +234,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     $miObj->setParameter("Ds_Merchant_MerchantURL", $merchantUrl);
     $miObj->setParameter("Ds_Merchant_UrlOK", $returnURL);
     $miObj->setParameter("Ds_Merchant_UrlKO", $cancelURL);
-    $miObj->setParameter("Ds_Merchant_ProductDescription", $params["contributionType_name"]);
+    $miObj->setParameter("Ds_Merchant_ProductDescription", $description);
     $miObj->setParameter("Ds_Merchant_Titular", $params["first_name"] . " " . $params["last_name"]);
     $miObj->setParameter("Ds_Merchant_ConsumerLanguage", self::REDSYS_LANGUAGE_SPANISH);
 
