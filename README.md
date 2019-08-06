@@ -7,7 +7,7 @@ http://book.civicrm.org/user/current/contributions/payment-processors/
 
 ## Release Notes ##
 
-### v2.2 ###
+### v2.2.0 ###
 
 - Update the Redsys api (redsysHMAC256_API_PHP_7.0.0), replacing the mcrypt to openssl
 
@@ -103,7 +103,7 @@ To search if is failing in some cases, search in ConfigLog from civicrm the work
 
 ## License ##
 
-Redsys Payment Processor for CiviCRM. Copyright (C) 2013 - 2018 Amnesty International (originally developed by Ixiam http://www.ixiam.com).
+Redsys Payment Processor for CiviCRM. Copyright (C) 2013 - 2019 Amnesty International (originally developed by Ixiam http://www.ixiam.com).
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
