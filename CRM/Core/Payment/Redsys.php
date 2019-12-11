@@ -225,7 +225,7 @@ class CRM_Core_Payment_Redsys extends CRM_Core_Payment {
     }
 
     $miObj = new RedsysAPI();
-    $miObj->setParameter("Ds_Merchant_Amount", $params["amount"] * 100);
+    $miObj->setParameter("Ds_Merchant_Amount", (int)(round($params["amount"] * 100)));
     $miObj->setParameter("Ds_Merchant_Order", strval(self::formatAmount($params["contributionID"], 12)));
     $miObj->setParameter("Ds_Merchant_MerchantCode", $this->_paymentProcessor["user_name"]);
     $miObj->setParameter("Ds_Merchant_Currency", self::REDSYS_CURRENCY_EURO);
