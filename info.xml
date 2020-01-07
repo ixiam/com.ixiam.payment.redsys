@@ -11,8 +11,8 @@
     <author>iXiam Global Solutions</author>
     <email>info@ixiam.com</email>
   </maintainer>
-  <releaseDate>2019-08-06</releaseDate>
-  <version>2.2.0</version>
+  <releaseDate>2020-01-07</releaseDate>
+  <version>2.2.1</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.0</ver>
